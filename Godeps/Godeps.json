@@ -1,0 +1,41 @@
+{
+	"ImportPath": "github.com/aldrin-ronco/qualitygoapi",
+	"GoVersion": "go1.8",
+	"GodepVersion": "v79",
+	"Packages": [
+		"./..."
+	],
+	"Deps": [
+		{
+			"ImportPath": "github.com/denisenkom/go-mssqldb",
+			"Rev": "a8b933e3527b526484b3b4de754ce7c179e8bfd0"
+		},
+		{
+			"ImportPath": "github.com/gorilla/mux",
+			"Comment": "v1.4.0-11-g8c683ee",
+			"Rev": "8c683ee571b6ee7ffc9f1cafd13103c422e71cbf"
+		},
+		{
+			"ImportPath": "github.com/jinzhu/gorm",
+			"Comment": "v1.0-157-geae7f6b",
+			"Rev": "eae7f6be603af3190e032fe3c4d465ddaf6ea3d4"
+		},
+		{
+			"ImportPath": "github.com/jinzhu/gorm/dialects/mssql",
+			"Comment": "v1.0-157-geae7f6b",
+			"Rev": "eae7f6be603af3190e032fe3c4d465ddaf6ea3d4"
+		},
+		{
+			"ImportPath": "github.com/jinzhu/inflection",
+			"Rev": "1c35d901db3da928c72a72d8458480cc9ade058f"
+		},
+		{
+			"ImportPath": "golang.org/x/crypto/md4",
+			"Rev": "69be088f860613049aa58c65154d1b1d32bbdf90"
+		},
+		{
+			"ImportPath": "golang.org/x/net/context",
+			"Rev": "1f9224279e98554b6a6432d4dd998a739f8b2b7c"
+		}
+	]
+}
