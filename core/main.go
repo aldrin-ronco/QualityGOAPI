@@ -15,16 +15,17 @@ import (
 	"os"
 )
 
-var dbs map[string]*gorm.DB // Map publico para almacenar las bases de datos
+var dbs map[string]*gorm.DB // Public Map to store db's instances
 var err error
 
 func main() {
-	// Crear el mapa para almacenar las bases de datos
+	// Make a map to store databases instances
 	dbs = make(map[string]*gorm.DB)
 	r := mux.NewRouter()
-	// Rutas
-	r.HandleFunc("/setup", setup).Methods("GET")
-	r.HandleFunc("/login-check", loginCheck).Methods("GET")
+	// Paths
+	r.HandleFunc("/setup", setup).Methods("GET") // Setup client database instance
+	r.HandleFunc("/login-check", loginCheck).Methods("GET") // Check user credentials
+	r.HandleFunc("/profile-options", profile_options).Methods("GET") // Return user's profile options
 
 	http.Handle("/", Middleware(r))
 
@@ -35,9 +36,152 @@ func main() {
 	if port == "" {
 		log.Fatal("$PORT must be set")
 	}
-	// Iniciar Servidor
+	// Start Sever
 	http.ListenAndServe(":" + port, nil)
 }
+
+func profile_options(writer http.ResponseWriter, request *http.Request) {
+
+	host_domain, user_name := request.Header.Get("host_domain"), request.Header.Get("user_name")
+
+	db, ok := dbs[host_domain]
+
+	if ok {
+
+		// Obtengo el nombre del usuario del cual se desea onbtener el perfil de opciones
+		// vars := mux.Vars(request)
+
+		// Prepare sentence
+		sQuery := fmt.Sprintf(`
+		SELECT DISTINCT Gen_Menu.Modulo As CodeModulo, Gen_Modulos.Nombre As NombreModulo,
+		Gen_Modulos.Orden As OrdenModulo, Gen_Menu.OrdenGrupo, Gen_Menu.Grupo As NombreGrupo,
+		Gen_Menu.Descripcion, Gen_Menu.Formulario
+		FROM  Gen_Menu
+		LEFT  JOIN Gen_Modulos ON Gen_Modulos.Modulo = Gen_Menu.Modulo
+		INNER JOIN Cfg_DetaPerfil ON Cfg_DetaPerfil.Formulario = Gen_Menu.Formulario
+		WHERE Cfg_DetaPerfil.Codper IN (SELECT CodPer FROM Cfg_PerfilxUsua WHERE Cfg_PerfilxUsua.Codusu = '%s')
+		ORDER BY Gen_Modulos.Orden, Grupo, Descripcion`,user_name)
+
+		rows, err := db.Raw(sQuery).Rows()
+
+		if err != nil {
+			panic(err)
+			return
+		}
+
+		// options
+		type Option struct {
+			Description string `json:"description"`
+			FormName string `json:"form_name"`
+		}
+
+		// Groups
+		type Group struct {
+			Description string `json:"description"`
+			Order string `json:"order"`
+			Options []Option `json:"options"`
+		}
+
+		// Module
+		type Module struct {
+			Description string `json:"description"`
+			Code string `json:"code"`
+			Groups []Group `json:"groups"`
+		}
+
+		//type Modules struct {
+		//	Module []Module
+		//}
+
+		type Data struct {
+			Modules []Module
+		}
+
+		type Response struct {
+			Data Data
+		}
+
+		// Resultado de la sentencia
+		type Query_Result struct {
+			CodeModulo string
+			NombreModulo string
+			OrdenModulo string
+			OrdenGrupo string
+			NombreGrupo string
+			Descripcion string
+			Formulario string
+		}
+
+		var oResult Query_Result
+		oResponse := &Response{} // Initialize response object
+		oResponse.Data.Modules = make([]Module, 0) // Max 10 Modules
+
+
+		for rows.Next() {
+
+			rows.Scan(&oResult.CodeModulo,&oResult.NombreModulo,&oResult.OrdenModulo,&oResult.OrdenGrupo,&oResult.NombreGrupo,&oResult.Descripcion,&oResult.Formulario)
+
+			// Search for Module
+			var found bool = false
+			for _, v := range oResponse.Data.Modules {
+				if v.Code == oResult.CodeModulo {
+					found = true
+					break
+				}
+			}
+			if !found {
+				oResponse.Data.Modules = append(oResponse.Data.Modules, Module{oResult.NombreModulo, oResult.CodeModulo, nil})
+				oResponse.Data.Modules[len(oResponse.Data.Modules)-1].Groups = make([]Group,0)
+			}
+
+			// Seek for module index
+			index_module := -1
+			for i, v := range oResponse.Data.Modules {
+				if v.Code == oResult.CodeModulo {
+					index_module = i
+					break
+				}
+			}
+
+			index_group := -1
+
+			// Seek for Groups
+			if index_module>=0 {
+
+				for i, v := range oResponse.Data.Modules[index_module].Groups {
+					if v.Description == oResult.NombreGrupo {
+						index_group = i
+						break
+					}
+				}
+
+				if index_group<0 {
+					oResponse.Data.Modules[index_module].Groups = append(oResponse.Data.Modules[index_module].Groups,
+					Group{oResult.NombreGrupo, oResult.OrdenGrupo, nil})
+					oResponse.Data.Modules[index_module].Groups[len(oResponse.Data.Modules[index_module].Groups)-1].Options = make([]Option,0)
+				}
+
+			}
+
+			// Seek for Index Group
+			for i, v := range oResponse.Data.Modules[index_module].Groups {
+				if v.Description == oResult.NombreGrupo {
+					index_group = i
+					break
+				}
+			}
+
+			// Add menu option
+			oResponse.Data.Modules[index_module].Groups[index_group].Options = append(oResponse.Data.Modules[index_module].Groups[index_group].Options,
+				Option{oResult.Descripcion, oResult.Formulario} )
+
+		}
+
+		json.NewEncoder(writer).Encode(oResponse)
+	}
+
+}
+
 
 // Intercepta peticiones HTTP y prepara el entorno
 func Middleware(h http.Handler) http.Handler {
@@ -131,53 +275,45 @@ func loginCheck(writer http.ResponseWriter, request *http.Request) {
 			DataBaseName string
 			DataBaseAlias string
 			LastBackUp time.Time
-			Pwd	string
+			pwd	string // Campo no exportado por estar en minuscula, no va incluido en el .json, otra forma de omitir la exportación del campo es con el tag `json:"-"`
 		}
 
 		// Estructura de la respuesta
-		type User_profile struct {
-			DataBases []DataBase
+		type User_Profile struct {
+			DataBases []DataBase `json:"databases"`
 		}
 
 		type Data struct {
-			Logged bool
-			User_profile User_profile
+			Logged bool `json:"logged"`
+			User_Profile User_Profile `json:"user_profile"`
 		}
 
 		// Response
 		type Response struct {
-			Data Data
-		}
-
-		// DB Result
-		type Result struct {
-			DataBaseName string
-			DataBaseAlias string
-			LastBackUp time.Time
-			Pwd	string
+			Data Data `json:"data"`
 		}
 
 		oResponse := &Response{}
-		oResponse.Data.User_profile.DataBases = make([]DataBase,20) // Maximo 20 Bases de datos por servidor
-		var result Result
+		oResponse.Data.User_Profile.DataBases = make([]DataBase,20) // Maximo 20 Bases de datos por servidor
+		var result DataBase
 		index:=0
 		for ;rows.Next(); index++ {
-			rows.Scan(&result.DataBaseName,&result.DataBaseAlias,&result.LastBackUp,&result.Pwd)
-			oResponse.Data.User_profile.DataBases[index].DataBaseName = result.DataBaseName
-			oResponse.Data.User_profile.DataBases[index].DataBaseAlias = result.DataBaseAlias
-			oResponse.Data.User_profile.DataBases[index].LastBackUp = result.LastBackUp
-			oResponse.Data.User_profile.DataBases[index].Pwd = result.Pwd
+			rows.Scan(&result.DataBaseName,&result.DataBaseAlias,&result.LastBackUp,&result.pwd)
+			oResponse.Data.User_Profile.DataBases[index].DataBaseName = result.DataBaseName
+			oResponse.Data.User_Profile.DataBases[index].DataBaseAlias = result.DataBaseAlias
+			oResponse.Data.User_Profile.DataBases[index].LastBackUp = result.LastBackUp
+			oResponse.Data.User_Profile.DataBases[index].pwd = result.pwd
 		}
 
 		// Esta logueado si la contraseña coincide y tiene por lo menos una base de datos asignada
-		if user_pwd := strings.ToUpper(GetMD5Hash(request.Header.Get("user_pwd"))); user_pwd == result.Pwd && index>0 {
+		if user_pwd := strings.ToUpper(GetMD5Hash(request.Header.Get("user_pwd"))); user_pwd == result.pwd && index>0 {
 			oResponse.Data.Logged = true
 		} else {
 			oResponse.Data.Logged = false
 		}
 
 		// Envíar respuesta
-		oResponse.Data.User_profile.DataBases = oResponse.Data.User_profile.DataBases[0:index] // Redimensiono el slice
+		oResponse.Data.User_Profile.DataBases = oResponse.Data.User_Profile.DataBases[0:index] // Redimensiono el slice
 		json.NewEncoder(writer).Encode(oResponse)
 
 	}
