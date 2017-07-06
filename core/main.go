@@ -190,6 +190,7 @@ func Middleware(h http.Handler) http.Handler {
 		setup(w, r)
 		// Set Headers
 		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("Access-Control-Allow-Origin", "*")
 		// Procesa la petición
 		h.ServeHTTP(w, r)
 	})
