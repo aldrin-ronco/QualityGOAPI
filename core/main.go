@@ -38,7 +38,7 @@ func main() {
 		log.Fatal("$PORT must be set")
 	}
 	// Cors
-
+	log.Println("Servidor escuchando en puerto", port)
 	// Start Sever
 	http.ListenAndServe(":" + port, nil)
 }
