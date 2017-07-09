@@ -13,6 +13,7 @@ import (
 	"crypto/md5"
 	"encoding/hex"
 	"os"
+	// "github.com/rs/cors"
 )
 
 var dbs map[string]*gorm.DB // Public Map to store db's instances
@@ -24,8 +25,10 @@ func main() {
 	r := mux.NewRouter()
 	// Paths
 	r.HandleFunc("/setup", setup).Methods("GET") // Setup client database instance
+	r.HandleFunc("/login-check", loginCheck).Methods("OPTIONS") // Check user credentials
 	r.HandleFunc("/login-check", loginCheck).Methods("GET") // Check user credentials
-	r.HandleFunc("/profile-options", profile_options).Methods("GET") // Return user's profile options
+	r.HandleFunc("/login-checko", loginChecko).Methods("GET","OPTIONS") // Check user credentials
+	r.HandleFunc("/profile-options", profile_options).Methods("GET","OPTIONS") // Return user's profile options
 
 	http.Handle("/", Middleware(r))
 
@@ -36,8 +39,16 @@ func main() {
 	if port == "" {
 		log.Fatal("$PORT must be set")
 	}
+	// Cors
+
 	// Start Sever
-	http.ListenAndServe(":" + port, nil)
+	http.ListenAndServe(":9090", nil)
+}
+func loginChecko(writer http.ResponseWriter, request *http.Request) {
+	writer.Header().Set("Content-Type", "application/json")
+	writer.Header().Set("Access-Control-Allow-Origin", "*")
+	writer.Header().Set( "Access-Control-Allow-Headers","Origin, X-Requested-With, Content-Type, Accept, Authorization, host_user, host_pwd, host_id, host_database, host_ip, models, host_port, user_name, user_pwd, host_domain")
+	json.NewEncoder(writer).Encode(request.Header.Get("user_name"))
 }
 
 func profile_options(writer http.ResponseWriter, request *http.Request) {
@@ -185,26 +196,63 @@ func profile_options(writer http.ResponseWriter, request *http.Request) {
 
 // Intercepta peticiones HTTP y prepara el entorno
 func Middleware(h http.Handler) http.Handler {
+
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// En cada petición se asegura de que la base de datos para esta empresa existe en el mapa
-		setup(w, r)
-		// Set Headers
+
 		w.Header().Set("Content-Type", "application/json")
 		w.Header().Set("Access-Control-Allow-Origin", "*")
-		//w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
-		//w.Header().Set("Access-Control-Allow-Headers",
-		//	"Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
-		// Procesa la petición
+		w.Header().Set( "Access-Control-Allow-Headers","Origin, X-Requested-With, Content-Type, Accept, Authorization, host_user, host_pwd, host_id, host_database, host_ip, models, host_port, user_name, user_pwd, host_domain")
+
+		switch r.Method {
+			case "OPTIONS":
+				 w.WriteHeader(http.StatusOK)
+			case "GET":
+				 setup(w, r)
+		}
+
+		// Procesar petición original
 		h.ServeHTTP(w, r)
+		//
+		//if r.Method == "OPTIONS" {
+		//	return
+		//}
+//		w.Header().Set("Content-Type", "application/json")
+//		w.Header().Set( "Access-Control-Allow-Credentials", "true")
+//		w.Header().Set( "Access-Control-Allow-Headers",
+//"Origin, X-Requested-With, Content-Type, Accept, Authorization, host_user, host_pwd, host_id, host_database, host_ip, models, host_port, user_name, user_pwd, host_domain")
+//		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS, HEAD")
+//		w.Header().Set("Access-Control-Allow-Origin", "*")
+//		w.Header().Set("Access-Control-Expose-Headers", "*")
+//		w.Header().Set("Allow", "GET, POST, PUT, DELETE, OPTIONS, HEAD")
+
+		// w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+
+		// w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+		// En cada petición se asegura de que la base de datos para esta empresa existe en el mapa
+		// log.Println(r.Header.Get("user_name"))
+		// w.Header().Set("Authorization", "responseAuthVal")
+
+		// setup(w, r)
+		// Set Headers
+		//w.Header().Set("Content-Type", "sapplication/json")
+		//w.Header().Set("Access-Control-Allow-Origin", "*")
+		//w.Header().Set("Access-Control-Expose-Header", "PROTOCOL,X-Powered-By,Etag")
+		//w.Header().Set("Access-Control-Allow-Headers",
+		//"Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
+		// Procesa la petición
+
 	})
 }
 
 // Inicializa la conexión con la base de datos
-func setup(writer http.ResponseWriter, request *http.Request) {
 
+func setup(writer http.ResponseWriter, request *http.Request) {
+	//log.Println(request.Header.Get("user_name"))
+	//log.Println(request.Header.Get("host_id"))
 	// Busco la LLave en el mapa para ver si existe
 	_, ok := dbs[request.Header.Get("host_domain")]
-
+	// log.Println(request.Header.Get("host_id"))
+	// log.Println(request.Header.Get("host_id"))
 	if !ok { // Si el dominio no está en el mapa
 
 /*		type Result struct {
@@ -213,13 +261,20 @@ func setup(writer http.ResponseWriter, request *http.Request) {
 			Domain string `json:"domain"`
 		}*/
 
-		// Obtengo todas las cabeceras del request
 		host_domain := strings.ToLower(request.Header.Get("host_domain")) // me aseguro que este en minuscula
 		host_user := request.Header.Get("host_user")
 		host_pwd := request.Header.Get("host_pwd")
 		host_database := request.Header.Get("host_database")
 		host_ip := request.Header.Get("host_ip")
 		host_port := request.Header.Get("host_port")
+
+		// Obtengo todas las cabeceras del request
+		//host_domain := strings.ToLower(request.Header.Get("host_domain")) // me aseguro que este en minuscula
+		//host_user := request.Header.Get("host_user")
+		//host_pwd := request.Header.Get("host_pwd")
+		//host_database := request.Header.Get("host_database")
+		//host_ip := request.Header.Get("host_ip")
+		//host_port := request.Header.Get("host_port")
 
 		// "sqlserver://sa:Qu4l1ty@190.248.137.122:1433?database=BD_COMERCIAL_ML")
 		dbs[host_domain], err = gorm.Open("mssql", fmt.Sprintf("sqlserver://%s:%s@%s:%s?database=%s",
@@ -232,17 +287,27 @@ func setup(writer http.ResponseWriter, request *http.Request) {
 				//result := &Result{Domain: host_domain, Status: "error", ErrMsj: err.Error()}
 				//json.NewEncoder(writer).Encode(result)
 			} else {
+				log.Println("Se ha registrado la bd : ", host_domain)
 				//result := &Result{Domain: host_domain, Status: "success", ErrMsj: ""}
 				//json.NewEncoder(writer).Encode(result)
 			}
 		}
+
 	}
 }
 
 // Verifica las credenciales del usuario y retorna un objeto con las bases de datos a las que puede acceder
 func loginCheck(writer http.ResponseWriter, request *http.Request) {
 
+	//log.Println(request.Header.Get("host_domain"))
+	//log.Println(request.Header.Get("host_domain"))
+	//log.Println(request.Header.Get("host_domain"))
+	//json.NewEncoder(writer).Encode(request.Header.Get("host_domain"))
+	//return
+
 	var host_domain string = request.Header.Get("host_domain")
+
+	// return
 
 	// Obtengo el dominio que está realizando el request
 	db, ok := dbs[host_domain]
@@ -287,37 +352,32 @@ func loginCheck(writer http.ResponseWriter, request *http.Request) {
 			DataBases []DataBase `json:"databases"`
 		}
 
-		type Data struct {
+		type Response struct {
 			Logged bool `json:"logged"`
 			User_Profile User_Profile `json:"user_profile"`
 		}
 
-		// Response
-		type Response struct {
-			Data Data `json:"data"`
-		}
-
 		oResponse := &Response{}
-		oResponse.Data.User_Profile.DataBases = make([]DataBase,20) // Maximo 20 Bases de datos por servidor
+		oResponse.User_Profile.DataBases = make([]DataBase,20) // Maximo 20 Bases de datos por servidor
 		var result DataBase
 		index:=0
 		for ;rows.Next(); index++ {
 			rows.Scan(&result.DataBaseName,&result.DataBaseAlias,&result.LastBackUp,&result.pwd)
-			oResponse.Data.User_Profile.DataBases[index].DataBaseName = result.DataBaseName
-			oResponse.Data.User_Profile.DataBases[index].DataBaseAlias = result.DataBaseAlias
-			oResponse.Data.User_Profile.DataBases[index].LastBackUp = result.LastBackUp
-			oResponse.Data.User_Profile.DataBases[index].pwd = result.pwd
+			oResponse.User_Profile.DataBases[index].DataBaseName = result.DataBaseName
+			oResponse.User_Profile.DataBases[index].DataBaseAlias = result.DataBaseAlias
+			oResponse.User_Profile.DataBases[index].LastBackUp = result.LastBackUp
+			oResponse.User_Profile.DataBases[index].pwd = result.pwd
 		}
 
 		// Esta logueado si la contraseña coincide y tiene por lo menos una base de datos asignada
 		if user_pwd := strings.ToUpper(GetMD5Hash(request.Header.Get("user_pwd"))); user_pwd == result.pwd && index>0 {
-			oResponse.Data.Logged = true
+			oResponse.Logged = true
 		} else {
-			oResponse.Data.Logged = false
+			oResponse.Logged = false
 		}
 
 		// Envíar respuesta
-		oResponse.Data.User_Profile.DataBases = oResponse.Data.User_Profile.DataBases[0:index] // Redimensiono el slice
+		oResponse.User_Profile.DataBases = oResponse.User_Profile.DataBases[0:index] // Redimensiono el slice
 		json.NewEncoder(writer).Encode(oResponse)
 
 	}
