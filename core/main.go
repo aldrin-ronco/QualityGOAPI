@@ -25,9 +25,7 @@ func main() {
 	r := mux.NewRouter()
 	// Paths
 	r.HandleFunc("/setup", setup).Methods("GET") // Setup client database instance
-	r.HandleFunc("/login-check", loginCheck).Methods("OPTIONS") // Check user credentials
-	r.HandleFunc("/login-check", loginCheck).Methods("GET") // Check user credentials
-	r.HandleFunc("/login-checko", loginChecko).Methods("GET","OPTIONS") // Check user credentials
+	r.HandleFunc("/login-check", loginCheck).Methods("GET","OPTIONS") // Check user credentials
 	r.HandleFunc("/profile-options", profile_options).Methods("GET","OPTIONS") // Return user's profile options
 
 	http.Handle("/", Middleware(r))
@@ -42,7 +40,7 @@ func main() {
 	// Cors
 
 	// Start Sever
-	http.ListenAndServe(":9090", nil)
+	http.ListenAndServe(":" + port, nil)
 }
 func loginChecko(writer http.ResponseWriter, request *http.Request) {
 	writer.Header().Set("Content-Type", "application/json")
