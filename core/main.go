@@ -42,12 +42,6 @@ func main() {
 	// Start Sever
 	http.ListenAndServe(":" + port, nil)
 }
-func loginChecko(writer http.ResponseWriter, request *http.Request) {
-	writer.Header().Set("Content-Type", "application/json")
-	writer.Header().Set("Access-Control-Allow-Origin", "*")
-	writer.Header().Set( "Access-Control-Allow-Headers","Origin, X-Requested-With, Content-Type, Accept, Authorization, host_user, host_pwd, host_id, host_database, host_ip, models, host_port, user_name, user_pwd, host_domain")
-	json.NewEncoder(writer).Encode(request.Header.Get("user_name"))
-}
 
 func profile_options(writer http.ResponseWriter, request *http.Request) {
 
@@ -204,8 +198,12 @@ func Middleware(h http.Handler) http.Handler {
 		switch r.Method {
 			case "OPTIONS":
 				 w.WriteHeader(http.StatusOK)
+				 log.Println("QualityAPI - ","OPTIONS")
 			case "GET":
+				 log.Println("QualityAPI - ","OPTIONS")
 				 setup(w, r)
+			default:
+				log.Println("QualityAPI - ",r.Method)
 		}
 
 		// Procesar petición original
