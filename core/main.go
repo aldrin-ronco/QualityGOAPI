@@ -14,14 +14,19 @@ import (
 	"encoding/hex"
 	"os"
 	// "github.com/rs/cors"
+	// s"database/sql"
 )
 
 var dbs map[string]*gorm.DB // Public Map to store db's instances
+var dbs_masters map[string]*gorm.DB // Public Map to store db's Master's instances
+
 var err error
 
 func main() {
 	// Make a map to store databases instances
 	dbs = make(map[string]*gorm.DB)
+	dbs_masters = make(map[string]*gorm.DB)
+
 	r := mux.NewRouter()
 	// Paths
 	r.HandleFunc("/setup", setup).Methods("GET") // Setup client database instance
@@ -32,10 +37,12 @@ func main() {
 
 	port := os.Getenv("PORT")
 
-	//log.Println(os.Environ()) //
-
 	if port == "" {
 		log.Fatal("$PORT must be set")
+	}
+
+	if host, _ := os.Hostname(); host == "QUALITYPC2" {
+		port = "9090"
 	}
 	// Cors
 	log.Println("Servidor escuchando en puerto", port)
@@ -47,7 +54,7 @@ func profile_options(writer http.ResponseWriter, request *http.Request) {
 
 	host_domain, user_name := request.Header.Get("host_domain"), request.Header.Get("user_name")
 
-	db, ok := dbs[host_domain]
+	db, ok := GetDB(host_domain)
 
 	if ok {
 
@@ -57,15 +64,18 @@ func profile_options(writer http.ResponseWriter, request *http.Request) {
 		// Prepare sentence
 		sQuery := fmt.Sprintf(`
 		SELECT DISTINCT Gen_Menu.Modulo As CodeModulo, Gen_Modulos.Nombre As NombreModulo,
-		Gen_Modulos.Orden As OrdenModulo, Gen_Menu.OrdenGrupo, Gen_Menu.Grupo As NombreGrupo,
+		Gen_Modulos.Orden As OrdenModulo, Gen_Menu.OrdenGrupo, Gen_Menu.OrdenItem, Gen_Menu.Grupo As NombreGrupo,
 		Gen_Menu.Descripcion, Gen_Menu.Formulario
 		FROM  Gen_Menu
 		LEFT  JOIN Gen_Modulos ON Gen_Modulos.Modulo = Gen_Menu.Modulo
 		INNER JOIN Cfg_DetaPerfil ON Cfg_DetaPerfil.Formulario = Gen_Menu.Formulario
 		WHERE Cfg_DetaPerfil.Codper IN (SELECT CodPer FROM Cfg_PerfilxUsua WHERE Cfg_PerfilxUsua.Codusu = '%s')
-		ORDER BY Gen_Modulos.Orden, Grupo, Descripcion`,user_name)
+		ORDER BY Gen_Modulos.Orden, Gen_Menu.OrdenGrupo, Gen_Menu.OrdenItem`,user_name)
 
+		// sQuery = "SELECT DB_NAME() As DB"
+		// log.Println(sQuery)
 		rows, err := db.Raw(sQuery).Rows()
+
 
 		if err != nil {
 			panic(err)
@@ -92,16 +102,8 @@ func profile_options(writer http.ResponseWriter, request *http.Request) {
 			Groups []Group `json:"groups"`
 		}
 
-		//type Modules struct {
-		//	Module []Module
-		//}
-
-		type Data struct {
-			Modules []Module
-		}
-
 		type Response struct {
-			Data Data
+			Modules []Module `json:"modules"`
 		}
 
 		// Resultado de la sentencia
@@ -110,6 +112,7 @@ func profile_options(writer http.ResponseWriter, request *http.Request) {
 			NombreModulo string
 			OrdenModulo string
 			OrdenGrupo string
+			OrdenItem int
 			NombreGrupo string
 			Descripcion string
 			Formulario string
@@ -117,29 +120,29 @@ func profile_options(writer http.ResponseWriter, request *http.Request) {
 
 		var oResult Query_Result
 		oResponse := &Response{} // Initialize response object
-		oResponse.Data.Modules = make([]Module, 0) // Max 10 Modules
+		oResponse.Modules = make([]Module, 0) // Max 10 Modules
 
 
 		for rows.Next() {
 
-			rows.Scan(&oResult.CodeModulo,&oResult.NombreModulo,&oResult.OrdenModulo,&oResult.OrdenGrupo,&oResult.NombreGrupo,&oResult.Descripcion,&oResult.Formulario)
+			rows.Scan(&oResult.CodeModulo,&oResult.NombreModulo,&oResult.OrdenModulo,&oResult.OrdenGrupo,&oResult.OrdenItem,&oResult.NombreGrupo,&oResult.Descripcion,&oResult.Formulario)
 
 			// Search for Module
 			var found bool = false
-			for _, v := range oResponse.Data.Modules {
+			for _, v := range oResponse.Modules {
 				if v.Code == oResult.CodeModulo {
 					found = true
 					break
 				}
 			}
 			if !found {
-				oResponse.Data.Modules = append(oResponse.Data.Modules, Module{oResult.NombreModulo, oResult.CodeModulo, nil})
-				oResponse.Data.Modules[len(oResponse.Data.Modules)-1].Groups = make([]Group,0)
+				oResponse.Modules = append(oResponse.Modules, Module{oResult.NombreModulo, oResult.CodeModulo, nil})
+				oResponse.Modules[len(oResponse.Modules)-1].Groups = make([]Group,0)
 			}
 
 			// Seek for module index
 			index_module := -1
-			for i, v := range oResponse.Data.Modules {
+			for i, v := range oResponse.Modules {
 				if v.Code == oResult.CodeModulo {
 					index_module = i
 					break
@@ -151,7 +154,7 @@ func profile_options(writer http.ResponseWriter, request *http.Request) {
 			// Seek for Groups
 			if index_module>=0 {
 
-				for i, v := range oResponse.Data.Modules[index_module].Groups {
+				for i, v := range oResponse.Modules[index_module].Groups {
 					if v.Description == oResult.NombreGrupo {
 						index_group = i
 						break
@@ -159,15 +162,15 @@ func profile_options(writer http.ResponseWriter, request *http.Request) {
 				}
 
 				if index_group<0 {
-					oResponse.Data.Modules[index_module].Groups = append(oResponse.Data.Modules[index_module].Groups,
+					oResponse.Modules[index_module].Groups = append(oResponse.Modules[index_module].Groups,
 					Group{oResult.NombreGrupo, oResult.OrdenGrupo, nil})
-					oResponse.Data.Modules[index_module].Groups[len(oResponse.Data.Modules[index_module].Groups)-1].Options = make([]Option,0)
+					oResponse.Modules[index_module].Groups[len(oResponse.Modules[index_module].Groups)-1].Options = make([]Option,0)
 				}
 
 			}
 
 			// Seek for Index Group
-			for i, v := range oResponse.Data.Modules[index_module].Groups {
+			for i, v := range oResponse.Modules[index_module].Groups {
 				if v.Description == oResult.NombreGrupo {
 					index_group = i
 					break
@@ -175,7 +178,7 @@ func profile_options(writer http.ResponseWriter, request *http.Request) {
 			}
 
 			// Add menu option
-			oResponse.Data.Modules[index_module].Groups[index_group].Options = append(oResponse.Data.Modules[index_module].Groups[index_group].Options,
+			oResponse.Modules[index_module].Groups[index_group].Options = append(oResponse.Modules[index_module].Groups[index_group].Options,
 				Option{oResult.Descripcion, oResult.Formulario} )
 
 		}
@@ -199,8 +202,9 @@ func Middleware(h http.Handler) http.Handler {
 			case "OPTIONS":
 				 w.WriteHeader(http.StatusOK)
 				 log.Println("QualityAPI - ","OPTIONS")
+				return
 			case "GET":
-				 log.Println("QualityAPI - ","OPTIONS")
+				 log.Println("QualityAPI - ","GET")
 				 setup(w, r)
 			default:
 				log.Println("QualityAPI - ",r.Method)
@@ -208,34 +212,6 @@ func Middleware(h http.Handler) http.Handler {
 
 		// Procesar petición original
 		h.ServeHTTP(w, r)
-		//
-		//if r.Method == "OPTIONS" {
-		//	return
-		//}
-//		w.Header().Set("Content-Type", "application/json")
-//		w.Header().Set( "Access-Control-Allow-Credentials", "true")
-//		w.Header().Set( "Access-Control-Allow-Headers",
-//"Origin, X-Requested-With, Content-Type, Accept, Authorization, host_user, host_pwd, host_id, host_database, host_ip, models, host_port, user_name, user_pwd, host_domain")
-//		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS, HEAD")
-//		w.Header().Set("Access-Control-Allow-Origin", "*")
-//		w.Header().Set("Access-Control-Expose-Headers", "*")
-//		w.Header().Set("Allow", "GET, POST, PUT, DELETE, OPTIONS, HEAD")
-
-		// w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-
-		// w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
-		// En cada petición se asegura de que la base de datos para esta empresa existe en el mapa
-		// log.Println(r.Header.Get("user_name"))
-		// w.Header().Set("Authorization", "responseAuthVal")
-
-		// setup(w, r)
-		// Set Headers
-		//w.Header().Set("Content-Type", "sapplication/json")
-		//w.Header().Set("Access-Control-Allow-Origin", "*")
-		//w.Header().Set("Access-Control-Expose-Header", "PROTOCOL,X-Powered-By,Etag")
-		//w.Header().Set("Access-Control-Allow-Headers",
-		//"Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
-		// Procesa la petición
 
 	})
 }
@@ -243,70 +219,73 @@ func Middleware(h http.Handler) http.Handler {
 // Inicializa la conexión con la base de datos
 
 func setup(writer http.ResponseWriter, request *http.Request) {
-	//log.Println(request.Header.Get("user_name"))
-	//log.Println(request.Header.Get("host_id"))
-	// Busco la LLave en el mapa para ver si existe
-	_, ok := dbs[request.Header.Get("host_domain")]
-	// log.Println(request.Header.Get("host_id"))
-	// log.Println(request.Header.Get("host_id"))
+
+	host_domain := strings.ToLower(request.Header.Get("host_domain")) // me aseguro que este en minuscula
+
+	_, ok := GetDB(host_domain)
+
 	if !ok { // Si el dominio no está en el mapa
 
-/*		type Result struct {
-			Status string `json:"status"`
-			ErrMsj string `json:"errMsj"`
-			Domain string `json:"domain"`
-		}*/
-
-		host_domain := strings.ToLower(request.Header.Get("host_domain")) // me aseguro que este en minuscula
+		host_database := request.Header.Get("host_database")
 		host_user := request.Header.Get("host_user")
 		host_pwd := request.Header.Get("host_pwd")
-		host_database := request.Header.Get("host_database")
 		host_ip := request.Header.Get("host_ip")
 		host_port := request.Header.Get("host_port")
-
-		// Obtengo todas las cabeceras del request
-		//host_domain := strings.ToLower(request.Header.Get("host_domain")) // me aseguro que este en minuscula
-		//host_user := request.Header.Get("host_user")
-		//host_pwd := request.Header.Get("host_pwd")
-		//host_database := request.Header.Get("host_database")
-		//host_ip := request.Header.Get("host_ip")
-		//host_port := request.Header.Get("host_port")
+		log.Println("host database :", request.Header.Get("host_database"))
 
 		// "sqlserver://sa:Qu4l1ty@190.248.137.122:1433?database=BD_COMERCIAL_ML")
-		dbs[host_domain], err = gorm.Open("mssql", fmt.Sprintf("sqlserver://%s:%s@%s:%s?database=%s",
+		if strings.Trim(host_database," ") == "" {
+			dbs_masters[host_domain], err = gorm.Open("mssql", fmt.Sprintf("sqlserver://%s:%s@%s:%s?database=%s",
+			host_user, host_pwd, host_ip, host_port, "Master"))
+		} else {
+			dbs[host_domain], err = gorm.Open("mssql", fmt.Sprintf("sqlserver://%s:%s@%s:%s?database=%s",
 			host_user, host_pwd, host_ip, host_port, host_database))
+		}
+
 		if err != nil {
-			//result := &Result{Domain: host_domain, Status: "error", ErrMsj: err.Error()}
-			//json.NewEncoder(writer).Encode(result)
+			log.Println("Setup -> ", err.Error())
 		} else {
 			if err != nil {
-				//result := &Result{Domain: host_domain, Status: "error", ErrMsj: err.Error()}
-				//json.NewEncoder(writer).Encode(result)
+				log.Println("Setup -> ", err.Error())
 			} else {
-				log.Println("Se ha registrado la bd : ", host_domain)
-				//result := &Result{Domain: host_domain, Status: "success", ErrMsj: ""}
-				//json.NewEncoder(writer).Encode(result)
+				log.Println(fmt.Sprintf("Setup -> Se ha registrado el dominio %s con la base de datos %s",host_domain,host_database))
 			}
 		}
 
+	} else { // Verifico que la conexión tenga identificada la base de datos con la que va a trabajar
+
+		_, ok := dbs_masters[host_domain]
+
+		if ok {
+
+			host_database := request.Header.Get("host_database")
+			host_user := request.Header.Get("host_user")
+			host_pwd := request.Header.Get("host_pwd")
+			host_ip := request.Header.Get("host_ip")
+			host_port := request.Header.Get("host_port")
+			log.Println("host database :", request.Header.Get("host_database"))
+
+			// Lo inserto en el mapa de bases de datos identificadas
+			dbs[host_domain], err = gorm.Open("mssql", fmt.Sprintf("sqlserver://%s:%s@%s:%s?database=%s",
+				host_user, host_pwd, host_ip, host_port, host_database))
+			log.Println(fmt.Sprintf("Setup -> Se ha registrado el dominio %s con la base de datos %s en dbs",host_domain,host_database))
+			// Elimino la base de datos del mapa de masters
+			delete(dbs_masters, host_domain)
+			log.Println(fmt.Sprintf("Setup -> Se ha eliminado el dominio %s en dbs_masters",host_domain))
+		}
 	}
+
 }
 
 // Verifica las credenciales del usuario y retorna un objeto con las bases de datos a las que puede acceder
 func loginCheck(writer http.ResponseWriter, request *http.Request) {
-
-	//log.Println(request.Header.Get("host_domain"))
-	//log.Println(request.Header.Get("host_domain"))
-	//log.Println(request.Header.Get("host_domain"))
-	//json.NewEncoder(writer).Encode(request.Header.Get("host_domain"))
-	//return
 
 	var host_domain string = request.Header.Get("host_domain")
 
 	// return
 
 	// Obtengo el dominio que está realizando el request
-	db, ok := dbs[host_domain]
+	db, ok := GetDB(host_domain)
 
 	if ok {
 
@@ -383,4 +362,16 @@ func GetMD5Hash(text string) string {
 	hasher := md5.New()
 	hasher.Write([]byte(text))
 	return hex.EncodeToString(hasher.Sum(nil))
+}
+
+func GetDB(host_domain string) (*gorm.DB, bool)  {
+	if db, ok := dbs_masters[host_domain]; ok {
+		return db, true
+	} else {
+		if db, ok = dbs[host_domain]; ok {
+			return db, true
+		} else {
+			return nil, false
+		}
+	}
 }
