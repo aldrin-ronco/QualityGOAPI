@@ -13,13 +13,13 @@ import (
 	"crypto/md5"
 	"encoding/hex"
 	"os"
+	"github.com/urfave/negroni"
 	// "github.com/rs/cors"
 	// s"database/sql"
 )
 
 var dbs map[string]*gorm.DB // Public Map to store db's instances
 var dbs_masters map[string]*gorm.DB // Public Map to store db's Master's instances
-
 var err error
 
 func main() {
@@ -29,11 +29,14 @@ func main() {
 
 	r := mux.NewRouter()
 	// Paths
-	r.HandleFunc("/setup", setup).Methods("GET") // Setup client database instance
+	// r.HandleFunc("/setup", setup).Methods("GET") // Setup client database instance
 	r.HandleFunc("/login-check", loginCheck).Methods("GET","OPTIONS") // Check user credentials
 	r.HandleFunc("/profile-options", profile_options).Methods("GET","OPTIONS") // Return user's profile options
 
-	http.Handle("/", Middleware(r))
+	n := negroni.Classic()
+	n.Use(negroni.HandlerFunc(setup))
+
+	n.UseHandler(r)
 
 	port := os.Getenv("PORT")
 
@@ -47,7 +50,30 @@ func main() {
 	// Cors
 	log.Println("Servidor escuchando en puerto", port)
 	// Start Sever
-	http.ListenAndServe(":" + port, nil)
+	http.ListenAndServe(":" + port, n)
+
+	///////////////////////////////////////////////////////////////////////////////////////////////////////////
+	//r := mux.NewRouter()
+	//// Paths
+	//r.HandleFunc("/setup", setup).Methods("GET") // Setup client database instance
+	//r.HandleFunc("/login-check", loginCheck).Methods("GET","OPTIONS") // Check user credentials
+	//r.HandleFunc("/profile-options", profile_options).Methods("GET","OPTIONS") // Return user's profile options
+	//
+	//http.Handle("/", Middleware(r))
+	//
+	//port := os.Getenv("PORT")
+	//
+	//if port == "" {
+	//	log.Fatal("$PORT must be set")
+	//}
+	//
+	//if host, _ := os.Hostname(); host == "QUALITYPC2" {
+	//	port = "9090"
+	//}
+	//// Cors
+	//log.Println("Servidor escuchando en puerto", port)
+	//// Start Sever
+	//http.ListenAndServe(":" + port, nil)
 }
 
 func profile_options(writer http.ResponseWriter, request *http.Request) {
@@ -205,8 +231,7 @@ func Middleware(h http.Handler) http.Handler {
 				return
 			case "GET":
 				 log.Println("QualityAPI - ","GET")
-				 setup(w, r)
-			default:
+				default:
 				log.Println("QualityAPI - ",r.Method)
 		}
 
@@ -218,7 +243,22 @@ func Middleware(h http.Handler) http.Handler {
 
 // Inicializa la conexión con la base de datos
 
-func setup(writer http.ResponseWriter, request *http.Request) {
+func setup(writer http.ResponseWriter, request *http.Request, next http.HandlerFunc) {
+
+	writer.Header().Set("Content-Type", "application/json")
+	writer.Header().Set("Access-Control-Allow-Origin", "*")
+	writer.Header().Set( "Access-Control-Allow-Headers","Origin, X-Requested-With, Content-Type, Accept, Authorization, host_user, host_pwd, host_id, host_database, host_ip, models, host_port, user_name, user_pwd, host_domain")
+
+	switch request.Method {
+	case "OPTIONS":
+		writer.WriteHeader(http.StatusOK)
+		// log.Println("QualityAPI - ","OPTIONS")
+		return
+	case "GET":
+		//log.Println("QualityAPI - ","GET")
+	default:
+		//log.Println("QualityAPI - ",request.Method)
+	}
 
 	host_domain := strings.ToLower(request.Header.Get("host_domain")) // me aseguro que este en minuscula
 
@@ -237,9 +277,13 @@ func setup(writer http.ResponseWriter, request *http.Request) {
 		if strings.Trim(host_database," ") == "" {
 			dbs_masters[host_domain], err = gorm.Open("mssql", fmt.Sprintf("sqlserver://%s:%s@%s:%s?database=%s",
 			host_user, host_pwd, host_ip, host_port, "Master"))
-		} else {
-			dbs[host_domain], err = gorm.Open("mssql", fmt.Sprintf("sqlserver://%s:%s@%s:%s?database=%s",
-			host_user, host_pwd, host_ip, host_port, host_database))
+			log.Println(fmt.Sprintf("sqlserver://%s:%s@%s:%s?database=%s",
+				host_user, host_pwd, host_ip, host_port, "Master"))
+		//} else {
+		//	dbs[host_domain], err = gorm.Open("mssql", fmt.Sprintf("sqlserver://%s:%s@%s:%s?database=%s",
+		//	host_user, host_pwd, host_ip, host_port, host_database))
+		//	log.Println(fmt.Sprintf("sqlserver://%s:%s@%s:%s?database=%s",
+		//		host_user, host_pwd, host_ip, host_port, host_database))
 		}
 
 		if err != nil {
@@ -254,6 +298,17 @@ func setup(writer http.ResponseWriter, request *http.Request) {
 
 	} else { // Verifico que la conexión tenga identificada la base de datos con la que va a trabajar
 
+		log.Println("-------------------------------")
+		log.Println("Master Antes :")
+		for k, _ := range dbs_masters {
+			log.Println(fmt.Sprintf("Key : %s Method : %s", k, request.RequestURI))
+		}
+		log.Println("-------------------------------")
+		log.Println("DBS Antes :")
+		for k, _ := range dbs {
+			log.Println(fmt.Sprintf("Key : %s Method : %s", k, request.RequestURI))
+		}
+		log.Println("-------------------------------")
 		_, ok := dbs_masters[host_domain]
 
 		if ok {
@@ -263,18 +318,37 @@ func setup(writer http.ResponseWriter, request *http.Request) {
 			host_pwd := request.Header.Get("host_pwd")
 			host_ip := request.Header.Get("host_ip")
 			host_port := request.Header.Get("host_port")
-			log.Println("host database :", request.Header.Get("host_database"))
+			// log.Println("host database :", request.Header.Get("host_database"))
+
+			_db, _ := gorm.Open("mssql", fmt.Sprintf("sqlserver://%s:%s@%s:%s?database=%s",
+			host_user, host_pwd, host_ip, host_port, host_database))
+
+			dbs[host_domain] = _db
 
 			// Lo inserto en el mapa de bases de datos identificadas
-			dbs[host_domain], err = gorm.Open("mssql", fmt.Sprintf("sqlserver://%s:%s@%s:%s?database=%s",
-				host_user, host_pwd, host_ip, host_port, host_database))
-			log.Println(fmt.Sprintf("Setup -> Se ha registrado el dominio %s con la base de datos %s en dbs",host_domain,host_database))
-			// Elimino la base de datos del mapa de masters
+			//dbs[host_domain], err = gorm.Open("mssql", fmt.Sprintf("sqlserver://%s:%s@%s:%s?database=%s",
+			//	host_user, host_pwd, host_ip, host_port, host_database))
+			log.Println(fmt.Sprintf("Setup -> Se ha registrado el dominio %s con la base de datos %s en dbs %s",host_domain,host_database,request.RequestURI))
+			//
+			//// Elimino la base de datos del mapa de masters
 			delete(dbs_masters, host_domain)
-			log.Println(fmt.Sprintf("Setup -> Se ha eliminado el dominio %s en dbs_masters",host_domain))
-		}
-	}
+			//log.Println(fmt.Sprintf("Setup -> Se ha eliminado el dominio %s en dbs_masters",host_domain))
+			// Compruebo si el elemento fue eliminado del mapa master
 
+		}
+		log.Println("-------------------------------")
+		log.Println("Master Despues :")
+		for k, _ := range dbs_masters {
+			log.Println(fmt.Sprintf("Key : %s Method : %s", k, request.RequestURI))
+		}
+		log.Println("-------------------------------")
+		log.Println("DBS Despues :")
+		for k, _ := range dbs {
+			log.Println(fmt.Sprintf("Key : %s Method : %s", k, request.RequestURI))
+		}
+		log.Println("-------------------------------")
+	}
+	next(writer, request)
 }
 
 // Verifica las credenciales del usuario y retorna un objeto con las bases de datos a las que puede acceder

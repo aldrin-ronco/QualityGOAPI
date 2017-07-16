@@ -2,6 +2,9 @@
 	"ImportPath": "github.com/aldrin-ronco/qualitygoapi/core",
 	"GoVersion": "go1.8",
 	"GodepVersion": "v79",
+	"Packages": [
+		"./..."
+	],
 	"Deps": [
 		{
 			"ImportPath": "github.com/denisenkom/go-mssqldb",
@@ -25,6 +28,11 @@
 		{
 			"ImportPath": "github.com/jinzhu/inflection",
 			"Rev": "1c35d901db3da928c72a72d8458480cc9ade058f"
+		},
+		{
+			"ImportPath": "github.com/urfave/negroni",
+			"Comment": "v0.2.0-123-gb52430c",
+			"Rev": "b52430c192a156df9ce64f249ccb551f0ff3467f"
 		},
 		{
 			"ImportPath": "golang.org/x/crypto/md4",
