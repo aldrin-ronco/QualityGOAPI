@@ -12,6 +12,7 @@ import (
 )
 
 type customer struct {
+	Id			   string 	 `json:"id"`
 	CodCli         string    `json:"codcli"`
 	Cedula         string    `json:"cedula"`
 	Nombre_1       string    `json:"nombre_1"`
@@ -114,7 +115,7 @@ func GetCustomers(c *appContext, w http.ResponseWriter, r *http.Request) (int, e
 	switch {
 	case strings.Trim(sId, " ") != "": // If a customer id is provided
 		sQuery_TMPL = `
-				SELECT Ven_Clientes.Cedula, Ven_Clientes.CodCli, CLI.Nombre_1, CLI.Nombre_2, CLI.Apellido_1, CLI.Apellido_2,
+				SELECT Ven_Clientes.Id, Ven_Clientes.Cedula, Ven_Clientes.CodCli, CLI.Nombre_1, CLI.Nombre_2, CLI.Apellido_1, CLI.Apellido_2,
 				CLI.NOMBRE_COM, CLI.NOMBRE_CAL, CLI.NOMBRE_BUS,
 				CLI.Telefono_1, CLI.Telefono_2, CLI.Celular_1, CLI.Celular_2, CLI.TELS, CLI.Direccion, CLI.Regimen, CLI.EMail,
 				CLI.RegistraFecNac, ISNULL(CLI.FecNac,GetDate()) As FecNac, CLI.CodMcpio, CLI.CodDpto, CLI.TipCap, CLI.TipID, LTRIM(RTRIM(Ven_Clientes.CODLIST)) As CodList,
@@ -126,7 +127,7 @@ func GetCustomers(c *appContext, w http.ResponseWriter, r *http.Request) (int, e
 				ORDER BY CLI.Nombre_Com`
 	default:
 		sQuery_TMPL = `
-				SELECT Ven_Clientes.Cedula, Ven_Clientes.CodCli, CLI.Nombre_1, CLI.Nombre_2, CLI.Apellido_1, CLI.Apellido_2,
+				SELECT Ven_Clientes.Id, Ven_Clientes.Cedula, Ven_Clientes.CodCli, CLI.Nombre_1, CLI.Nombre_2, CLI.Apellido_1, CLI.Apellido_2,
 				CLI.NOMBRE_COM, CLI.NOMBRE_CAL, CLI.NOMBRE_BUS,
 				CLI.Telefono_1, CLI.Telefono_2, CLI.Celular_1, CLI.Celular_2, CLI.TELS, CLI.Direccion, CLI.Regimen, CLI.EMail,
 				CLI.RegistraFecNac, ISNULL(CLI.FecNac,GetDate()) As FecNac, CLI.CodMcpio, CLI.CodDpto, CLI.TipCap, CLI.TipID, LTRIM(RTRIM(Ven_Clientes.CODLIST)) As CodList,
@@ -166,7 +167,7 @@ func GetCustomers(c *appContext, w http.ResponseWriter, r *http.Request) (int, e
 		}
 
 		for rows.Next() {
-			err := rows.Scan(&cust.CodCli, &cust.Cedula, &cust.Nombre_1, &cust.Nombre_2, &cust.Apellido_1, &cust.Apellido_2,
+			err := rows.Scan(&cust.Id, &cust.CodCli, &cust.Cedula, &cust.Nombre_1, &cust.Nombre_2, &cust.Apellido_1, &cust.Apellido_2,
 				&cust.Nombre_Com, &cust.Nombre_Bus, &cust.Nombre_Cal, &cust.Telefono_1, &cust.Telefono_2,
 				&cust.Celular_1, &cust.Celular_2, &cust.TELS, &cust.Direccion, &cust.Regimen, &cust.EMail,
 				&cust.RegistraFecNac, &cust.FecNac, &cust.CodMcpio, &cust.CodDpto, &cust.TipCap, &cust.TipID,
