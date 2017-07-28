@@ -1,1 +1,1 @@
-web: core
+web: main
