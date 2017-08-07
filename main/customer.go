@@ -3,16 +3,18 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"github.com/gorilla/mux"
 	"net/http"
 	"strconv"
 	"strings"
 	"text/template"
 	"time"
+	"log"
 )
 
 type customer struct {
-	Id			   string 	 `json:"id"`
+	Id             string    `json:"id"`
 	CodCli         string    `json:"codcli"`
 	Cedula         string    `json:"cedula"`
 	Nombre_1       string    `json:"nombre_1"`
@@ -49,19 +51,26 @@ type customer struct {
 	CodNeg         string    `json:"codneg"`
 }
 
+type pagination struct {
+	Total     uint64 `json:"total"`
+	Page_Size int   `json:"page_size"`
+	Page_No int `json:"page_no"`
+}
+
 type customers struct {
-	customers []customer
+	Pagination pagination `json:"pagination"`
+	Customers  []customer `json:"data"`
 }
 
 func GetCustomers(c *appContext, w http.ResponseWriter, r *http.Request) (int, error) {
 
-	var sQuery_TMPL string
+	var sQuery_TMPL, sQuery_Counter string
 	var sQuery, sDBPrefix bytes.Buffer
 	var sFilter_Query, sFilter_Pagination string = "", ""
 	var cust customer
 
 	custmrs := &customers{}
-	custmrs.customers = make([]customer, 0)
+	custmrs.Customers = make([]customer, 0)
 
 	// Valid End-Points
 	// /customers -> All Customers
@@ -69,7 +78,7 @@ func GetCustomers(c *appContext, w http.ResponseWriter, r *http.Request) (int, e
 	// /customers?pagen_no=1&page_size=50 -> Customer's selection from 1 to 50
 	// /customers?pagen_no=2&page_size=50 -> Customer's selection from 51 to 100
 	// /customers?pagen_no=1&page_size=50&filter=CARLOS -> Customer's selection from 1 to 50 Where customer's name
-														  // contains "CARLOS" string.
+	// contains "CARLOS" string.
 
 	vars := mux.Vars(r)
 	query := r.URL.Query()
@@ -83,11 +92,11 @@ func GetCustomers(c *appContext, w http.ResponseWriter, r *http.Request) (int, e
 
 	// Query Values
 	type query_values struct {
-		Id        int
-		Page_Size int
-		OffSet    int
-		DBName    string
-		Filter    string
+		Id         int
+		Page_Size  int
+		OffSet     int
+		DBName     string
+		Filter     string
 		Pagination string
 	}
 
@@ -105,11 +114,11 @@ func GetCustomers(c *appContext, w http.ResponseWriter, r *http.Request) (int, e
 	// OffSet, Page_Size and Page No.
 	if strings.Trim(sPage_size, " ") != "" && strings.Trim(sPage_No, " ") != "" {
 		sFilter_Pagination = "OFFSET " + strconv.Itoa((page_no-1)*page_size) + " ROWS \n" +
-							 "FETCH NEXT " + strconv.Itoa(page_size) + " ROWS ONLY"
+			"FETCH NEXT " + strconv.Itoa(page_size) + " ROWS ONLY"
 	}
 
 	// Fill Values
-	substitute := query_values{Id: id, Page_Size: page_size, OffSet: offset, DBName: sDBPrefix.String(), Filter: sFilter_Query, Pagination:sFilter_Pagination}
+	substitute := query_values{Id: id, Page_Size: page_size, OffSet: offset, DBName: sDBPrefix.String(), Filter: sFilter_Query, Pagination: sFilter_Pagination}
 
 	// Query selection
 	switch {
@@ -167,7 +176,7 @@ func GetCustomers(c *appContext, w http.ResponseWriter, r *http.Request) (int, e
 		}
 
 		for rows.Next() {
-			err := rows.Scan(&cust.Id, &cust.CodCli, &cust.Cedula, &cust.Nombre_1, &cust.Nombre_2, &cust.Apellido_1, &cust.Apellido_2,
+			err := rows.Scan(&cust.Id, &cust.Cedula, &cust.CodCli, &cust.Nombre_1, &cust.Nombre_2, &cust.Apellido_1, &cust.Apellido_2,
 				&cust.Nombre_Com, &cust.Nombre_Bus, &cust.Nombre_Cal, &cust.Telefono_1, &cust.Telefono_2,
 				&cust.Celular_1, &cust.Celular_2, &cust.TELS, &cust.Direccion, &cust.Regimen, &cust.EMail,
 				&cust.RegistraFecNac, &cust.FecNac, &cust.CodMcpio, &cust.CodDpto, &cust.TipCap, &cust.TipID,
@@ -178,9 +187,31 @@ func GetCustomers(c *appContext, w http.ResponseWriter, r *http.Request) (int, e
 				panic(err)
 				return http.StatusInternalServerError, err
 			}
-			custmrs.customers = append(custmrs.customers, cust)
+			custmrs.Customers = append(custmrs.Customers, cust)
 		}
-		json.NewEncoder(w).Encode(custmrs.customers)
+
+		// Get pagination info
+		sQuery_Counter = fmt.Sprintf("SELECT Count(Id) As Total FROM %vVen_Clientes CLI WHERE Cedula<>'' %v", host_database+".DBO.", sFilter_Query)
+		log.Println(sQuery_Counter)
+		rows, err = db.Raw(sQuery_Counter).Rows()
+		if err != nil {
+			panic(err)
+			return http.StatusInternalServerError, err
+		}
+
+		var counter uint64 = 0
+		if rows.Next() {
+			err = rows.Scan(&counter)
+			if err != nil {
+				panic(err)
+				return http.StatusInternalServerError, err
+			}
+		}
+
+		custmrs.Pagination.Total = counter
+		custmrs.Pagination.Page_Size = page_size
+		custmrs.Pagination.Page_No = page_no
+		json.NewEncoder(w).Encode(custmrs)
 	}
 	return http.StatusOK, nil
 }
