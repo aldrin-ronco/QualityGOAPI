@@ -7,10 +7,6 @@
 	],
 	"Deps": [
 		{
-			"ImportPath": "github.com/denisenkom/go-mssqldb",
-			"Rev": "a8b933e3527b526484b3b4de754ce7c179e8bfd0"
-		},
-		{
 			"ImportPath": "github.com/gorilla/mux",
 			"Comment": "v1.4.0-11-g8c683ee",
 			"Rev": "8c683ee571b6ee7ffc9f1cafd13103c422e71cbf"

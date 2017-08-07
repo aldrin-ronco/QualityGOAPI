@@ -10,7 +10,6 @@ import (
 	"strings"
 	"text/template"
 	"time"
-	"log"
 )
 
 type customer struct {
@@ -192,7 +191,7 @@ func GetCustomers(c *appContext, w http.ResponseWriter, r *http.Request) (int, e
 
 		// Get pagination info
 		sQuery_Counter = fmt.Sprintf("SELECT Count(Id) As Total FROM %vVen_Clientes CLI WHERE Cedula<>'' %v", host_database+".DBO.", sFilter_Query)
-		log.Println(sQuery_Counter)
+
 		rows, err = db.Raw(sQuery_Counter).Rows()
 		if err != nil {
 			panic(err)
