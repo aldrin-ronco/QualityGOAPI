@@ -67,6 +67,8 @@ func main() {
 
 	// Customers
 	r.Handle("/customers", appHandler{ctx, GetCustomers}).Methods("GET", "OPTIONS")
+	r.Handle("/customers", appHandler{ctx, PostCustomers}).Methods("POST")
+	r.Handle("/customers/{id}", appHandler{ctx,PutCustomers}).Methods("PUT")
 	r.Handle("/customers/{id}", appHandler{ctx, GetCustomers}).Methods("GET", "OPTIONS")
 
 	n := negroni.Classic()
@@ -82,7 +84,7 @@ func main() {
 		log.Fatal("$PORT must be set")
 	}
 
-	if host, _ := os.Hostname(); host == "QUALITYPC2" {
+	if host, _ := os.Hostname(); host == "QUALITYPC_AR" {
 		port = "9090"
 	}
 	// Cors
