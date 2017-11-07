@@ -1,5 +1,5 @@
 {
-	"ImportPath": "github.com/aldrin-ronco/QualityGOAPI",
+	"ImportPath": "github.com/aldrin-ronco/qualitygoapi",
 	"GoVersion": "go1.8",
 	"GodepVersion": "v79",
 	"Packages": [
