@@ -1,11 +1,15 @@
 {
-	"ImportPath": "github.com/aldrin-ronco/qualitygoapi/core",
+	"ImportPath": "github.com/aldrin-ronco/qualitygoapi/main",
 	"GoVersion": "go1.8",
 	"GodepVersion": "v79",
 	"Packages": [
 		"./..."
 	],
 	"Deps": [
+		{
+			"ImportPath": "github.com/denisenkom/go-mssqldb",
+			"Rev": "88555645b640cc621e32f8693d7586a1aa1575f4"
+		},
 		{
 			"ImportPath": "github.com/gorilla/mux",
 			"Comment": "v1.4.0-11-g8c683ee",
