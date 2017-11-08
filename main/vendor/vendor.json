@@ -3,6 +3,10 @@
 	"ignore": "test",
 	"package": [
 		{
+			"path": "=tree",
+			"revision": ""
+		},
+		{
 			"path": "github.com/aldrin-ronco/qualitygoapi/main",
 			"revision": ""
 		},
