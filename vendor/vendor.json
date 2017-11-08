@@ -3,9 +3,13 @@
 	"ignore": "test",
 	"package": [
 		{
+			"path": "github.com/aldrin-ronco/qualitygoapi/context",
+			"revision": ""
+		},
+		{
 			"path": "github.com/aldrin-ronco/qualitygoapi/main",
 			"revision": ""
 		}
 	],
-	"rootPath": "github.com/aldrin-ronco/qualitygoapi/main"
+	"rootPath": "github.com/aldrin-ronco/qualitygoapi"
 }
