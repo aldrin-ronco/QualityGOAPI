@@ -1,6 +1,11 @@
 {
 	"comment": "",
 	"ignore": "test",
-	"package": [],
+	"package": [
+		{
+			"path": "github.com/aldrin-ronco/qualitygoapi/main",
+			"revision": ""
+		}
+	],
 	"rootPath": "github.com/aldrin-ronco/qualitygoapi/main"
 }
