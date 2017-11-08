@@ -1,0 +1,59 @@
+{
+	"comment": "",
+	"ignore": "test",
+	"package": [
+		{
+			"path": "github.com/aldrin-ronco/qualitygoapi/main",
+			"revision": ""
+		},
+		{
+			"checksumSHA1": "sH+gOi3dWTCxkTqFeEo4KkITwpc=",
+			"path": "github.com/denisenkom/go-mssqldb",
+			"revision": "88555645b640cc621e32f8693d7586a1aa1575f4",
+			"revisionTime": "2017-10-06T17:24:03Z"
+		},
+		{
+			"checksumSHA1": "qvsEhA+BntKV5nqjCARYL2gLSzo=",
+			"path": "github.com/gorilla/mux",
+			"revision": "ac112f7d75a0714af1bd86ab17749b31f7809640",
+			"revisionTime": "2017-07-03T15:07:09Z"
+		},
+		{
+			"checksumSHA1": "nJelTPrSAq46MKY83F/gpIVLOpw=",
+			"path": "github.com/jinzhu/gorm",
+			"revision": "0a51f6cdc55d1650d9ed3b4c13026cfa9133b01e",
+			"revisionTime": "2017-10-10T13:28:39Z"
+		},
+		{
+			"checksumSHA1": "xc7WETRwG+ZsyKV3oIGpC59cvvQ=",
+			"path": "github.com/jinzhu/gorm/dialects/mssql",
+			"revision": "0a51f6cdc55d1650d9ed3b4c13026cfa9133b01e",
+			"revisionTime": "2017-10-10T13:28:39Z"
+		},
+		{
+			"checksumSHA1": "tUQ1pHvWxAcPFmveZtlmCR9H4TY=",
+			"path": "github.com/jinzhu/inflection",
+			"revision": "1c35d901db3da928c72a72d8458480cc9ade058f",
+			"revisionTime": "2017-01-02T12:52:26Z"
+		},
+		{
+			"checksumSHA1": "+FRuMQOpR6j66oNaNo4LgBooJzQ=",
+			"path": "github.com/urfave/negroni",
+			"revision": "1b4412b5af55badc44e606777749f16bf519f4c6",
+			"revisionTime": "2017-11-05T18:32:00Z"
+		},
+		{
+			"checksumSHA1": "MCeXr2RNeiG1XG6V+er1OR0qyeo=",
+			"path": "golang.org/x/crypto/md4",
+			"revision": "687d4b818545e443c8ba223cbef20b1721afd4db",
+			"revisionTime": "2017-11-05T15:18:38Z"
+		},
+		{
+			"checksumSHA1": "GtamqiJoL7PGHsN454AoffBFMa8=",
+			"path": "golang.org/x/net/context",
+			"revision": "01c190206fbdffa42f334f4b2bf2220f50e64920",
+			"revisionTime": "2017-11-02T18:53:09Z"
+		}
+	],
+	"rootPath": "github.com/aldrin-ronco/qualitygoapi/main"
+}
