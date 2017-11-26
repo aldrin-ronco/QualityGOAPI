@@ -1,10 +1,7 @@
 {
-	"ImportPath": "github.com/aldrin-ronco/qualitygoapi/main",
+	"ImportPath": "github.com/aldrin-ronco/QualityGOAPI/main",
 	"GoVersion": "go1.8",
 	"GodepVersion": "v79",
-	"Packages": [
-		"./..."
-	],
 	"Deps": [
 		{
 			"ImportPath": "github.com/denisenkom/go-mssqldb",

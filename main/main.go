@@ -1,5 +1,12 @@
 package main
 
+// PARA EJECUTAR : GO BUILD
+// UBICARSE EN C:\projects\go\src\github.com\aldrin-ronco\QualityGOAPI\main>
+
+// PARA EJECUTAR : GODEP SAVE
+// UBICARSE EN C:\projects\go\src\github.com\aldrin-ronco\QualityGOAPI\main>
+
+
 import (
 	"crypto/md5"
 	"encoding/hex"
@@ -266,7 +273,7 @@ func setup(writer http.ResponseWriter, request *http.Request, next http.HandlerF
 
 	writer.Header().Set("Content-Type", "application/json")
 	writer.Header().Set("Access-Control-Allow-Origin", "*")
-	writer.Header().Set("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization, host_user, host_pwd, host_id, host_database, host_ip, models, host_port, user_name, user_pwd, host_domain")
+	writer.Header().Set("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization, host_user, host_pwd, host_id, host_database, host_ip, host_port, user_name, user_pwd, host_domain")
 
 	switch request.Method {
 	case "OPTIONS":

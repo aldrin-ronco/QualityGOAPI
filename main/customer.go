@@ -49,6 +49,24 @@ type customer struct {
 	Activo         bool      `json:"activo"`
 	MotivoBloqueo  string    `json:"motivo_bloqueo"`
 	CodNeg         string    `json:"codneg"`
+	LastModified   time.Time `json:"last_modified"`
+}
+
+type Customer_Table struct {
+	Id            int32   	`json:"id,string"gorm:"column:id"gorm:"primary_key"`
+	CodCli        string  	`json:"codcli"gorm:"column:codcli"`
+	Cedula        string  	`json:"cedula"`
+	CodList       string  	`json:"codlist"gorm:"column:codlist"`
+	Margenreteica float32 	`json:"margen_rete_ica,string"gorm:"column:margenreteica"`
+	Retanybase    *bool   	`json:"ret_any_base"`
+	CodVen        string  	`json:"codven"gorm:"column:codven"`
+	CodZona       string  	`json:"codzona"gorm:"column:codzona"`
+	PlazoCR       int8    	`json:"plazo_cr"gorm:"column:plazocr"`
+	ExentoIVA     *bool   	`json:"exento_iva"gorm:"column:exentoiva"`
+	Activo        *bool   	`json:"activo"`
+	MotivoBloqueo string  	`json:"motivo_bloqueo"gorm:"column:motivobloqueo"`
+	CodNeg        string  	`json:"codneg"gorm:"column:codneg"`
+	LastModified  time.Time `json:"last_modified"gorm:"column:lastmodified"`
 }
 
 type pagination struct {
@@ -64,16 +82,18 @@ type customers struct {
 
 var DATABASE_NAME string
 
-func (Customer_v2) TableName() string {
+func (Customer_Table) TableName() string {
 	return DATABASE_NAME + ".dbo.ven_clientes"
 }
 
+// Get Customers
 func GetCustomers(c *appContext, w http.ResponseWriter, r *http.Request) (int, error) {
 
 	var sQuery_TMPL, sQuery_Counter string
 	var sQuery, sDBPrefix bytes.Buffer
 	var sFilter_Query, sFilter_Pagination string = "", ""
 	var cust customer
+	var for_sync bool
 
 	custmrs := &customers{}
 	custmrs.Customers = make([]customer, 0)
@@ -87,13 +107,14 @@ func GetCustomers(c *appContext, w http.ResponseWriter, r *http.Request) (int, e
 	// /customers?pagen_no=1&page_size=50 -> Customer's selection from 1 to 50
 	// /customers?pagen_no=2&page_size=50 -> Customer's selection from 51 to 100
 	// /customers?pagen_no=1&page_size=50&filter=CARLOS -> Customer's selection from 1 to 50 Where customer's name
+	// /customers?for_sync=true -> Para que me devuelva unicamente los clientes pedientes de sincronizacion
 	// contains "CARLOS" string.
 
 	vars := mux.Vars(r)
 	query := r.URL.Query()
 
-	sId, sFilter, sPage_size, sOffset, sPageNo, host_database := vars["id"], query.Get("filter"), query.Get("page_size"),
-		query.Get("offset"), query.Get("page_no"), r.Header.Get("host_database") // Check if Id is provided
+	sId, sFilter, sPage_size, sOffset, sPageNo, host_database, sForSync  := vars["id"], query.Get("filter"), query.Get("page_size"),
+		query.Get("offset"), query.Get("page_no"), r.Header.Get("host_database"), query.Get("for_sync") // Check if Id is provided
 
 	// Low Cost concatenation process
 	sDBPrefix.WriteString(host_database)
@@ -115,9 +136,23 @@ func GetCustomers(c *appContext, w http.ResponseWriter, r *http.Request) (int, e
 	offset, _ := strconv.Atoi(sOffset)
 	page_no, _ := strconv.Atoi(sPageNo)
 
+	if strings.Trim(sForSync, " ") != "" {
+		for_sync, err = strconv.ParseBool(sForSync)
+		if err != nil {
+			return http.StatusInternalServerError, err
+		}
+	} else {
+		for_sync = false
+	}
+
+	// Just records with LastModified date diferent than lastSync
+	if for_sync {
+		sFilter_Query = "AND (CLI.LastModified<>CLI.LastSync OR CLI.lastSync IS NULL) "
+	}
+
 	// Set Filter
 	if strings.Trim(sFilter, " ") != "" {
-		sFilter_Query = "AND CLI.Nombre_Com LIKE '%" + strings.Replace(sFilter, " ", "%", -1) + "%'"
+		sFilter_Query = sFilter_Query + "AND CLI.Nombre_Com LIKE '%" + strings.Replace(sFilter, " ", "%", -1) + "%'"
 	}
 
 	// OffSet, Page_Size and Page No.
@@ -138,7 +173,8 @@ func GetCustomers(c *appContext, w http.ResponseWriter, r *http.Request) (int, e
 				CLI.Telefono_1, CLI.Telefono_2, CLI.Celular_1, CLI.Celular_2, CLI.TELS, CLI.Direccion, CLI.Regimen, CLI.EMail,
 				CLI.RegistraFecNac, ISNULL(CLI.FecNac,GetDate()) As FecNac, CLI.CodMcpio, CLI.CodDpto, CLI.TipCap, CLI.TipID, LTRIM(RTRIM(Ven_Clientes.CODLIST)) As CodList,
 				ISNULL(CLI.FechaRegistro,GetDate()) As FechaRegistro, Ven_Clientes.MARGENRETEICA, Ven_Clientes.RETANYBASE, Ven_Clientes.CodVen, Ven_Clientes.CodZona,
-				Ven_Clientes.PlazoCR, Ven_Clientes.ExentoIVA, Ven_Clientes.Activo, Ven_Clientes.MotivoBloqueo, Ven_Clientes.CodNeg
+				Ven_Clientes.PlazoCR, Ven_Clientes.ExentoIVA, Ven_Clientes.Activo, Ven_Clientes.MotivoBloqueo, Ven_Clientes.CodNeg,
+				CLI.LastModified
 				FROM {{.DBName}}Ven_Clientes
 				LEFT JOIN {{.DBName}}Cnt_Terceros CLI ON CLI.CodTer = Ven_Clientes.Cedula
 				WHERE Ven_Clientes.Id={{.Id}}
@@ -150,7 +186,8 @@ func GetCustomers(c *appContext, w http.ResponseWriter, r *http.Request) (int, e
 				CLI.Telefono_1, CLI.Telefono_2, CLI.Celular_1, CLI.Celular_2, CLI.TELS, CLI.Direccion, CLI.Regimen, CLI.EMail,
 				CLI.RegistraFecNac, ISNULL(CLI.FecNac,GetDate()) As FecNac, CLI.CodMcpio, CLI.CodDpto, CLI.TipCap, CLI.TipID, LTRIM(RTRIM(Ven_Clientes.CODLIST)) As CodList,
 				ISNULL(CLI.FechaRegistro,GetDate()) As FechaRegistro, Ven_Clientes.MARGENRETEICA, Ven_Clientes.RETANYBASE, Ven_Clientes.CodVen, Ven_Clientes.CodZona,
-				Ven_Clientes.PlazoCR, Ven_Clientes.ExentoIVA, Ven_Clientes.Activo, Ven_Clientes.MotivoBloqueo, Ven_Clientes.CodNeg
+				Ven_Clientes.PlazoCR, Ven_Clientes.ExentoIVA, Ven_Clientes.Activo, Ven_Clientes.MotivoBloqueo, Ven_Clientes.CodNeg,
+				CLI.LastModified
 				FROM {{.DBName}}Ven_Clientes
 				LEFT JOIN {{.DBName}}Cnt_Terceros CLI ON CLI.CodTer = Ven_Clientes.Cedula
 				WHERE LTRIM(RTRIM(CLI.CodTer))<>'' {{.Filter}}
@@ -174,7 +211,6 @@ func GetCustomers(c *appContext, w http.ResponseWriter, r *http.Request) (int, e
 	db, ok := c.dbs[r.Header.Get("host_domain")]
 
 	if ok {
-
 		rows, err := db.Raw(sQuery.String()).Rows()
 
 		if err != nil {
@@ -187,7 +223,7 @@ func GetCustomers(c *appContext, w http.ResponseWriter, r *http.Request) (int, e
 				&cust.Celular_1, &cust.Celular_2, &cust.TELS, &cust.Direccion, &cust.Regimen, &cust.EMail,
 				&cust.RegistraFecNac, &cust.FecNac, &cust.CodMcpio, &cust.CodDpto, &cust.TipCap, &cust.TipID,
 				&cust.CodList, &cust.FechaRegistro, &cust.MargenReteICA, &cust.RetAnyBase, &cust.CodVen,
-				&cust.CodZona, &cust.PlazoCR, &cust.ExentoIVA, &cust.Activo, &cust.MotivoBloqueo, &cust.CodNeg)
+				&cust.CodZona, &cust.PlazoCR, &cust.ExentoIVA, &cust.Activo, &cust.MotivoBloqueo, &cust.CodNeg, &cust.LastModified)
 
 			if err != nil {
 				return http.StatusInternalServerError, err
@@ -219,25 +255,9 @@ func GetCustomers(c *appContext, w http.ResponseWriter, r *http.Request) (int, e
 	return http.StatusOK, nil
 }
 
-type Customer_v2 struct {
-	Id            int32   `json:"id,string"gorm:"column:id"gorm:"primary_key"`
-	CodCli        string  `json:"codcli"gorm:"column:codcli"`
-	Cedula        string  `json:"cedula"`
-	CodList       string  `json:"codlist"gorm:"column:codlist"`
-	Margenreteica float32 `json:"margen_rete_ica,string"gorm:"column:margenreteica"`
-	Retanybase    *bool   `json:"ret_any_base"`
-	CodVen        string  `json:"codven"gorm:"column:codven"`
-	CodZona       string  `json:"codzona"gorm:"column:codzona"`
-	PlazoCR       int8    `json:"plazo_cr"gorm:"column:plazocr"`
-	ExentoIVA     *bool   `json:"exento_iva"gorm:"column:exentoiva"`
-	Activo        *bool   `json:"activo"`
-	MotivoBloqueo string  `json:"motivo_bloqueo"gorm:"column:motivobloqueo"`
-	CodNeg        string  `json:"codneg"gorm:"column:codneg"`
-}
-
 // Create New Customer
 func PostCustomers(c *appContext, w http.ResponseWriter, r *http.Request) (int, error) {
-	var client Customer_v2
+	var client Customer_Table
 	// Set DataBaseName
 	DATABASE_NAME = r.Header.Get("host_database")
 	// Obtengo el cuerpo del body
@@ -258,8 +278,8 @@ func PostCustomers(c *appContext, w http.ResponseWriter, r *http.Request) (int, 
 
 // Update existing Customer
 func PutCustomers (c *appContext, w http.ResponseWriter, r *http.Request) (int, error) {
-	var client Customer_v2
-	var params Customer_v2
+	var client Customer_Table
+	var params Customer_Table
 	var id = mux.Vars(r)["id"]
 	// Set DataBaseName
 	DATABASE_NAME = r.Header.Get("host_database")
