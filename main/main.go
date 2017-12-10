@@ -330,7 +330,7 @@ func loginCheck(c *appContext, w http.ResponseWriter, r *http.Request) (int, err
 
 		// Preparo la sentencia
 		sQuery := fmt.Sprintf(`
-		SELECT Gen_Databases.DataBaseName, Gen_Databases.DataBaseAlias, Gen_Databases.LastBackUp, Master.DBO.Cfg_Usuarios.PWD
+		SELECT Gen_Databases.Id, Gen_Databases.DataBaseName, Gen_Databases.DataBaseAlias, Gen_Databases.LastBackUp, Master.DBO.Cfg_Usuarios.PWD
 		FROM Master.dbo.Cfg_Usuarios
 		INNER JOIN  (
 			SELECT Master.dbo.Cfg_Usuarios.UserName, Gen_DataBases.DataBaseName
@@ -352,6 +352,7 @@ func loginCheck(c *appContext, w http.ResponseWriter, r *http.Request) (int, err
 		}
 
 		type DataBase struct {
+			Id			  int
 			DataBaseName  string
 			DataBaseAlias string
 			LastBackUp    time.Time
@@ -372,7 +373,8 @@ func loginCheck(c *appContext, w http.ResponseWriter, r *http.Request) (int, err
 		var result DataBase
 		index := 0
 		for ; rows.Next(); index++ {
-			rows.Scan(&result.DataBaseName, &result.DataBaseAlias, &result.LastBackUp, &result.pwd)
+			rows.Scan(&result.Id, &result.DataBaseName, &result.DataBaseAlias, &result.LastBackUp, &result.pwd)
+			oResponse.User_Profile.DataBases[index].Id = result.Id
 			oResponse.User_Profile.DataBases[index].DataBaseName = result.DataBaseName
 			oResponse.User_Profile.DataBases[index].DataBaseAlias = result.DataBaseAlias
 			oResponse.User_Profile.DataBases[index].LastBackUp = result.LastBackUp
