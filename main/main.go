@@ -352,10 +352,10 @@ func loginCheck(c *appContext, w http.ResponseWriter, r *http.Request) (int, err
 		}
 
 		type DataBase struct {
-			Id			  int
-			DataBaseName  string
-			DataBaseAlias string
-			LastBackUp    time.Time
+			Id			  int `json:"id"`
+			DatabaseName  string `json:"database_name"`
+			DatabaseAlias string `json:"database_alias"`
+			LastBackup    time.Time `json:"last_backup"`
 			pwd           string // Campo no exportado por estar en minuscula, no va incluido en el .json, otra forma de omitir la exportación del campo es con el tag `json:"-"`
 		}
 
@@ -373,11 +373,11 @@ func loginCheck(c *appContext, w http.ResponseWriter, r *http.Request) (int, err
 		var result DataBase
 		index := 0
 		for ; rows.Next(); index++ {
-			rows.Scan(&result.Id, &result.DataBaseName, &result.DataBaseAlias, &result.LastBackUp, &result.pwd)
+			rows.Scan(&result.Id, &result.DatabaseName, &result.DatabaseAlias, &result.LastBackup, &result.pwd)
 			oResponse.User_Profile.DataBases[index].Id = result.Id
-			oResponse.User_Profile.DataBases[index].DataBaseName = result.DataBaseName
-			oResponse.User_Profile.DataBases[index].DataBaseAlias = result.DataBaseAlias
-			oResponse.User_Profile.DataBases[index].LastBackUp = result.LastBackUp
+			oResponse.User_Profile.DataBases[index].DatabaseName = result.DatabaseName
+			oResponse.User_Profile.DataBases[index].DatabaseAlias = result.DatabaseAlias
+			oResponse.User_Profile.DataBases[index].LastBackup = result.LastBackup
 			oResponse.User_Profile.DataBases[index].pwd = result.pwd
 		}
 
