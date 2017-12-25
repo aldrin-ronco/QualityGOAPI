@@ -321,16 +321,21 @@ func PutCustomers (c *appContext, w http.ResponseWriter, r *http.Request) (int, 
 	//		return http.StatusInternalServerError, dbc.Error
 	//	}
 	//}
+	fmt.Print("Before If")
 	if ok {
 		db.First(&client, id)
 		//fmt.Println(params)
+		fmt.Print("Before Second If")
 		if dbc := db.Model(&client).Updates(&params); dbc.Error != nil {
+			fmt.Print("IN Second If")
 			fmt.Print(dbc.Error)
 			return http.StatusInternalServerError, dbc.Error
 		} else {
+			fmt.Print("Before Second Else")
 			resp.Success = true
 		}
 		json.NewEncoder(w).Encode(resp)
 	}
+	fmt.Print("After If")
 	return http.StatusOK, nil
 }
