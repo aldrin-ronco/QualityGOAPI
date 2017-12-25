@@ -305,6 +305,8 @@ func PutCustomers (c *appContext, w http.ResponseWriter, r *http.Request) (int, 
 	if err != nil {
 		fmt.Print(err) // Colocar el error en el LOG
 		return http.StatusInternalServerError, err
+	} else {
+		fmt.Print(params)
 	}
 	// Obtengo la conexión a la base de datos
 	db, ok := c.dbs[r.Header.Get("host_domain")]
