@@ -289,14 +289,14 @@ func PostCustomers(c *appContext, w http.ResponseWriter, r *http.Request) (int, 
 func PutCustomers (c *appContext, w http.ResponseWriter, r *http.Request) (int, error) {
 
 	type Response struct {
-		success bool
+		Success bool
 	}
 
 	var client Customer_Table
 	var params Customer_Table
 	var id = mux.Vars(r)["id"]
 
-	resp := &Response{success:false}
+	resp := &Response{Success:false}
 
 	// Set DataBaseName
 	DATABASE_NAME = r.Header.Get("host_database")
@@ -324,7 +324,7 @@ func PutCustomers (c *appContext, w http.ResponseWriter, r *http.Request) (int, 
 			fmt.Print(dbc.Error)
 			return http.StatusInternalServerError, dbc.Error
 		} else {
-			resp.success = true
+			resp.Success = true
 		}
 		json.NewEncoder(w).Encode(resp)
 	}
