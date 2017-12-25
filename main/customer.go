@@ -96,6 +96,7 @@ func GetCustomers(c *appContext, w http.ResponseWriter, r *http.Request) (int, e
 	var sFilter_Query, sFilter_Pagination string = "", ""
 	var cust customer
 	var for_sync bool
+	var sTop_Criteria string = ""
 
 	custmrs := &customers{}
 	custmrs.Customers = make([]customer, 0)
@@ -129,6 +130,7 @@ func GetCustomers(c *appContext, w http.ResponseWriter, r *http.Request) (int, e
 		OffSet     int
 		DBName     string
 		Filter     string
+		Top 	   string
 		Pagination string
 	}
 
@@ -149,7 +151,8 @@ func GetCustomers(c *appContext, w http.ResponseWriter, r *http.Request) (int, e
 
 	// Just records with LastModified date diferent than lastSync
 	if for_sync {
-		sFilter_Query = "AND (CLI.LastModified<>CLI.LastSync OR CLI.lastSync IS NULL) "
+		sFilter_Query = "AND (Ven_Clientes.LastModified<>Ven_Clientes.LastSync OR Ven_Clientes.LastSync IS NULL) "
+		sTop_Criteria = "TOP (5) " // Sync data in 5 records chuncks per request
 	}
 
 	// Set Filter
@@ -164,7 +167,9 @@ func GetCustomers(c *appContext, w http.ResponseWriter, r *http.Request) (int, e
 	}
 
 	// Fill Values
-	substitute := query_values{Id: id, Page_Size: page_size, OffSet: offset, DBName: sDBPrefix.String(), Filter: sFilter_Query, Pagination: sFilter_Pagination}
+	substitute := query_values{Id: id, Page_Size: page_size, OffSet: offset,
+	DBName: sDBPrefix.String(), Filter: sFilter_Query, Pagination: sFilter_Pagination,
+	Top: sTop_Criteria}
 
 	// Query selection
 	switch {
@@ -176,20 +181,20 @@ func GetCustomers(c *appContext, w http.ResponseWriter, r *http.Request) (int, e
 				CLI.RegistraFecNac, ISNULL(CLI.FecNac,GetDate()) As FecNac, CLI.CodMcpio, CLI.CodDpto, CLI.TipCap, CLI.TipID, LTRIM(RTRIM(Ven_Clientes.CODLIST)) As CodList,
 				ISNULL(CLI.FechaRegistro,GetDate()) As FechaRegistro, Ven_Clientes.MARGENRETEICA, Ven_Clientes.RETANYBASE, Ven_Clientes.CodVen, Ven_Clientes.CodZona,
 				Ven_Clientes.CodBarr, Ven_Clientes.PlazoCR, Ven_Clientes.ExentoIVA, Ven_Clientes.Activo, Ven_Clientes.MotivoBloqueo, Ven_Clientes.CodNeg,
-				CLI.LastModified
+				Ven_Clientes.LastModified
 				FROM {{.DBName}}Ven_Clientes
 				LEFT JOIN {{.DBName}}Cnt_Terceros CLI ON CLI.CodTer = Ven_Clientes.Cedula
 				WHERE Ven_Clientes.Id={{.Id}}
 				ORDER BY CLI.Nombre_Com`
 	default:
 		sQuery_TMPL = `
-				SELECT Ven_Clientes.Id, Ven_Clientes.Cedula, Ven_Clientes.CodCli, CLI.Nombre_1, CLI.Nombre_2, CLI.Apellido_1, CLI.Apellido_2,
+				SELECT {{.Top}} Ven_Clientes.Id, Ven_Clientes.Cedula, Ven_Clientes.CodCli, CLI.Nombre_1, CLI.Nombre_2, CLI.Apellido_1, CLI.Apellido_2,
 				CLI.NOMBRE_COM, CLI.NOMBRE_CAL, CLI.NOMBRE_BUS,
 				CLI.Telefono_1, CLI.Telefono_2, CLI.Celular_1, CLI.Celular_2, CLI.TELS, CLI.Direccion, CLI.Regimen, CLI.EMail,
 				CLI.RegistraFecNac, ISNULL(CLI.FecNac,GetDate()) As FecNac, CLI.CodMcpio, CLI.CodDpto, CLI.TipCap, CLI.TipID, LTRIM(RTRIM(Ven_Clientes.CODLIST)) As CodList,
 				ISNULL(CLI.FechaRegistro,GetDate()) As FechaRegistro, Ven_Clientes.MARGENRETEICA, Ven_Clientes.RETANYBASE, Ven_Clientes.CodVen, Ven_Clientes.CodZona,
 				Ven_Clientes.CodBarr, Ven_Clientes.PlazoCR, Ven_Clientes.ExentoIVA, Ven_Clientes.Activo, Ven_Clientes.MotivoBloqueo, Ven_Clientes.CodNeg,
-				CLI.LastModified
+				Ven_Clientes.LastModified
 				FROM {{.DBName}}Ven_Clientes
 				LEFT JOIN {{.DBName}}Cnt_Terceros CLI ON CLI.CodTer = Ven_Clientes.Cedula
 				WHERE LTRIM(RTRIM(CLI.CodTer))<>'' {{.Filter}}
@@ -208,6 +213,8 @@ func GetCustomers(c *appContext, w http.ResponseWriter, r *http.Request) (int, e
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}
+
+	//fmt.Println(sQuery.String())
 
 	// Obtengo la conexión a la base de datos
 	db, ok := c.dbs[r.Header.Get("host_domain")]
@@ -234,7 +241,7 @@ func GetCustomers(c *appContext, w http.ResponseWriter, r *http.Request) (int, e
 		}
 
 		// Get pagination info
-		sQuery_Counter = fmt.Sprintf("SELECT Count(Id) As Total FROM %vVen_Clientes CLI WHERE Cedula<>'' %v", host_database+".DBO.", sFilter_Query)
+		sQuery_Counter = fmt.Sprintf("SELECT Count(Id) As Total FROM %vVen_Clientes WHERE Cedula<>'' %v", sDBPrefix.String(), sFilter_Query)
 
 		rows, err = db.Raw(sQuery_Counter).Rows()
 		if err != nil {
@@ -288,6 +295,7 @@ func PutCustomers (c *appContext, w http.ResponseWriter, r *http.Request) (int, 
 	// Obtengo el cuerpo del body
 	err = json.NewDecoder(r.Body).Decode(&params)
 	if err != nil {
+		fmt.Print(err) // Colocar el error en el LOG
 		return http.StatusInternalServerError, err
 	}
 	// Obtengo la conexión a la base de datos
@@ -305,6 +313,7 @@ func PutCustomers (c *appContext, w http.ResponseWriter, r *http.Request) (int, 
 		db.First(&client, id)
 		//fmt.Println(params)
 		if dbc := db.Model(&client).Updates(&params); dbc.Error != nil {
+			fmt.Print(dbc.Error)
 			return http.StatusInternalServerError, dbc.Error
 		}
 	}
