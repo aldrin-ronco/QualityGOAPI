@@ -302,12 +302,14 @@ func PutCustomers (c *appContext, w http.ResponseWriter, r *http.Request) (int, 
 	DATABASE_NAME = r.Header.Get("host_database")
 	// Obtengo el cuerpo del body
 	err = json.NewDecoder(r.Body).Decode(&params)
+	fmt.Print("Before de params ", params)
 	if err != nil {
 		fmt.Print(err) // Colocar el error en el LOG
 		return http.StatusInternalServerError, err
 	} else {
 		fmt.Print("Contenido de params ", params)
 	}
+	fmt.Print("After de params ", params)
 	// Obtengo la conexión a la base de datos
 	db, ok := c.dbs[r.Header.Get("host_domain")]
 	//if ok {
