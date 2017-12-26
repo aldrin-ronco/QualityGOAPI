@@ -70,7 +70,7 @@ type Customer_Table struct {
 	MotivoBloqueo string  	`json:"motivo_bloqueo"gorm:"column:motivobloqueo"`
 	CodNeg        string  	`json:"codneg"gorm:"column:codneg"`
 	LastModified  time.Time `json:"last_modified"gorm:"column:lastmodified"`
-	LastSync	  time.Time `json:"last_sync"gorm:"column:lastsync"`
+	LastSync	 *time.Time `json:"last_sync"gorm:"column:lastsync"`
 }
 
 type pagination struct {
@@ -291,28 +291,28 @@ func PostCustomers(c *appContext, w http.ResponseWriter, r *http.Request) (int, 
 // Update existing Customer
 func PutCustomers (c *appContext, w http.ResponseWriter, r *http.Request) (int, error) {
 
-	type Response struct {
-		Success bool
-	}
+	//type Response struct {
+	//	Success bool
+	//}
 
 	var client Customer_Table
 	var params Customer_Table
 	var id = mux.Vars(r)["id"]
 
-	resp := &Response{Success:false}
+	//resp := &Response{Success:false}
 
 	// Set DataBaseName
 	DATABASE_NAME = r.Header.Get("host_database")
 	// Obtengo el cuerpo del body
 	err = json.NewDecoder(r.Body).Decode(&params)
-	fmt.Print("Before de params ", params.LastSync)
+	//fmt.Print("Before de params ", r.Body)
 	if err != nil {
 		fmt.Print(err) // Colocar el error en el LOG
 		return http.StatusInternalServerError, err
 	} else {
-		fmt.Print("Contenido de params ", params.LastSync)
+		//fmt.Print("Contenido de params ", params.LastSync)
 	}
-	fmt.Print("After de params ", params.LastSync)
+	//fmt.Print("After de params ", params.LastSync)
 	// Obtengo la conexión a la base de datos
 	db, ok := c.dbs[r.Header.Get("host_domain")]
 	//if ok {
@@ -324,21 +324,21 @@ func PutCustomers (c *appContext, w http.ResponseWriter, r *http.Request) (int, 
 	//		return http.StatusInternalServerError, dbc.Error
 	//	}
 	//}
-	fmt.Print("Before If")
+	//fmt.Print("Before If")
 	if ok {
 		db.First(&client, id)
 		//fmt.Println(params)
-		fmt.Print("Before Second If")
+		//fmt.Print("Before Second If")
 		if dbc := db.Model(&client).Updates(&params); dbc.Error != nil {
-			fmt.Print("IN Second If")
+			//fmt.Print("IN Second If")
 			fmt.Print(dbc.Error)
 			return http.StatusInternalServerError, dbc.Error
 		} else {
-			fmt.Print("Before Second Else")
-			resp.Success = true
+			//fmt.Print("Before Second Else")
+			//resp.Success = true
 		}
-		json.NewEncoder(w).Encode(resp)
+		//json.NewEncoder(w).Encode(resp)
 	}
-	fmt.Print("After If")
+	//fmt.Print("After If")
 	return http.StatusOK, nil
 }
