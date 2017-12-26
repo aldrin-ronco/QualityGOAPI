@@ -183,7 +183,7 @@ func GetCustomers(c *appContext, w http.ResponseWriter, r *http.Request) (int, e
 				CLI.RegistraFecNac, ISNULL(CLI.FecNac,GetDate()) As FecNac, CLI.CodMcpio, CLI.CodDpto, CLI.TipCap, CLI.TipID, LTRIM(RTRIM(Ven_Clientes.CODLIST)) As CodList,
 				ISNULL(CLI.FechaRegistro,GetDate()) As FechaRegistro, Ven_Clientes.MARGENRETEICA, Ven_Clientes.RETANYBASE, Ven_Clientes.CodVen, Ven_Clientes.CodZona,
 				Ven_Clientes.CodBarr, Ven_Clientes.PlazoCR, Ven_Clientes.ExentoIVA, Ven_Clientes.Activo, Ven_Clientes.MotivoBloqueo, Ven_Clientes.CodNeg,
-				Ven_Clientes.LastModified
+				Ven_Clientes.LastModified, Ven_Clientes.LastSync
 				FROM {{.DBName}}Ven_Clientes
 				LEFT JOIN {{.DBName}}Cnt_Terceros CLI ON CLI.CodTer = Ven_Clientes.Cedula
 				WHERE Ven_Clientes.Id={{.Id}}
@@ -196,7 +196,7 @@ func GetCustomers(c *appContext, w http.ResponseWriter, r *http.Request) (int, e
 				CLI.RegistraFecNac, ISNULL(CLI.FecNac,GetDate()) As FecNac, CLI.CodMcpio, CLI.CodDpto, CLI.TipCap, CLI.TipID, LTRIM(RTRIM(Ven_Clientes.CODLIST)) As CodList,
 				ISNULL(CLI.FechaRegistro,GetDate()) As FechaRegistro, Ven_Clientes.MARGENRETEICA, Ven_Clientes.RETANYBASE, Ven_Clientes.CodVen, Ven_Clientes.CodZona,
 				Ven_Clientes.CodBarr, Ven_Clientes.PlazoCR, Ven_Clientes.ExentoIVA, Ven_Clientes.Activo, Ven_Clientes.MotivoBloqueo, Ven_Clientes.CodNeg,
-				Ven_Clientes.LastModified
+				Ven_Clientes.LastModified, Ven_Clientes.LastSync
 				FROM {{.DBName}}Ven_Clientes
 				LEFT JOIN {{.DBName}}Cnt_Terceros CLI ON CLI.CodTer = Ven_Clientes.Cedula
 				WHERE LTRIM(RTRIM(CLI.CodTer))<>'' {{.Filter}}
@@ -234,7 +234,8 @@ func GetCustomers(c *appContext, w http.ResponseWriter, r *http.Request) (int, e
 				&cust.Celular_1, &cust.Celular_2, &cust.TELS, &cust.Direccion, &cust.Regimen, &cust.EMail,
 				&cust.RegistraFecNac, &cust.FecNac, &cust.CodMcpio, &cust.CodDpto, &cust.TipCap, &cust.TipID,
 				&cust.CodList, &cust.FechaRegistro, &cust.MargenReteICA, &cust.RetAnyBase, &cust.CodVen,
-				&cust.CodZona, &cust.CodBarr, &cust.PlazoCR, &cust.ExentoIVA, &cust.Activo, &cust.MotivoBloqueo, &cust.CodNeg, &cust.LastModified)
+				&cust.CodZona, &cust.CodBarr, &cust.PlazoCR, &cust.ExentoIVA, &cust.Activo, &cust.MotivoBloqueo,
+				&cust.CodNeg, &cust.LastModified, &cust.LastSync)
 
 			if err != nil {
 				return http.StatusInternalServerError, err
@@ -304,14 +305,14 @@ func PutCustomers (c *appContext, w http.ResponseWriter, r *http.Request) (int, 
 	DATABASE_NAME = r.Header.Get("host_database")
 	// Obtengo el cuerpo del body
 	err = json.NewDecoder(r.Body).Decode(&params)
-	fmt.Print("Before de params ", params)
+	fmt.Print("Before de params ", params.LastSync)
 	if err != nil {
 		fmt.Print(err) // Colocar el error en el LOG
 		return http.StatusInternalServerError, err
 	} else {
-		fmt.Print("Contenido de params ", params)
+		fmt.Print("Contenido de params ", params.LastSync)
 	}
-	fmt.Print("After de params ", params)
+	fmt.Print("After de params ", params.LastSync)
 	// Obtengo la conexión a la base de datos
 	db, ok := c.dbs[r.Header.Get("host_domain")]
 	//if ok {
