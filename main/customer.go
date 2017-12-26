@@ -51,7 +51,7 @@ type customer struct {
 	MotivoBloqueo  string    `json:"motivo_bloqueo"`
 	CodNeg         string    `json:"codneg"`
 	LastModified   time.Time `json:"last_modified"`
-	LastSync	   time.Time `json:"last_sync"`
+	LastSync	  *time.Time `json:"last_sync"`
 }
 
 type Customer_Table struct {
