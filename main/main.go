@@ -77,6 +77,7 @@ func main() {
 	r.Handle("/customers", appHandler{ctx, PostCustomers}).Methods("POST")
 	r.Handle("/customers/{id}", appHandler{ctx,PutCustomers}).Methods("PUT")
 	r.Handle("/customers/{id}", appHandler{ctx, GetCustomers}).Methods("GET", "OPTIONS")
+	r.Handle("/customers/{id}", appHandler{ctx, DeleteCustomer}).Methods("DELETE")
 
 	n := negroni.Classic()
 

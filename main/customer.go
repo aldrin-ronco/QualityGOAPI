@@ -52,6 +52,7 @@ type customer struct {
 	CodNeg         string    `json:"codneg"`
 	LastModified   time.Time `json:"last_modified"`
 	LastSync	  *time.Time `json:"last_sync"`
+	DeletedAt	  *time.Time `json:"deleted_at"`
 }
 
 type Customer_Table struct {
@@ -71,6 +72,7 @@ type Customer_Table struct {
 	CodNeg        string  	`json:"codneg"gorm:"column:codneg"`
 	LastModified  time.Time `json:"last_modified"gorm:"column:lastmodified"`
 	LastSync	 *time.Time `json:"last_sync"gorm:"column:lastsync"`
+	DeletedAt	 *time.Time `json:"deleted_at"gorm:"column:deletedat"`
 }
 
 type pagination struct {
@@ -154,7 +156,7 @@ func GetCustomers(c *appContext, w http.ResponseWriter, r *http.Request) (int, e
 	// Just records with LastModified date diferent than lastSync
 	if for_sync {
 		sFilter_Query = "AND (Ven_Clientes.LastModified<>Ven_Clientes.LastSync OR Ven_Clientes.LastSync IS NULL) "
-		sTop_Criteria = "TOP (5) " // Sync data in 5 records chuncks per request
+		sTop_Criteria = "TOP (50) " // Sync data in 50 records chuncks per request
 	}
 
 	// Set Filter
@@ -183,7 +185,7 @@ func GetCustomers(c *appContext, w http.ResponseWriter, r *http.Request) (int, e
 				CLI.RegistraFecNac, ISNULL(CLI.FecNac,GetDate()) As FecNac, CLI.CodMcpio, CLI.CodDpto, CLI.TipCap, CLI.TipID, LTRIM(RTRIM(Ven_Clientes.CODLIST)) As CodList,
 				ISNULL(CLI.FechaRegistro,GetDate()) As FechaRegistro, Ven_Clientes.MARGENRETEICA, Ven_Clientes.RETANYBASE, Ven_Clientes.CodVen, Ven_Clientes.CodZona,
 				Ven_Clientes.CodBarr, Ven_Clientes.PlazoCR, Ven_Clientes.ExentoIVA, Ven_Clientes.Activo, Ven_Clientes.MotivoBloqueo, Ven_Clientes.CodNeg,
-				Ven_Clientes.LastModified, Ven_Clientes.LastSync
+				Ven_Clientes.LastModified, Ven_Clientes.LastSync, Ven_Clientes.DeletedAt
 				FROM {{.DBName}}Ven_Clientes
 				LEFT JOIN {{.DBName}}Cnt_Terceros CLI ON CLI.CodTer = Ven_Clientes.Cedula
 				WHERE Ven_Clientes.Id={{.Id}}
@@ -196,7 +198,7 @@ func GetCustomers(c *appContext, w http.ResponseWriter, r *http.Request) (int, e
 				CLI.RegistraFecNac, ISNULL(CLI.FecNac,GetDate()) As FecNac, CLI.CodMcpio, CLI.CodDpto, CLI.TipCap, CLI.TipID, LTRIM(RTRIM(Ven_Clientes.CODLIST)) As CodList,
 				ISNULL(CLI.FechaRegistro,GetDate()) As FechaRegistro, Ven_Clientes.MARGENRETEICA, Ven_Clientes.RETANYBASE, Ven_Clientes.CodVen, Ven_Clientes.CodZona,
 				Ven_Clientes.CodBarr, Ven_Clientes.PlazoCR, Ven_Clientes.ExentoIVA, Ven_Clientes.Activo, Ven_Clientes.MotivoBloqueo, Ven_Clientes.CodNeg,
-				Ven_Clientes.LastModified, Ven_Clientes.LastSync
+				Ven_Clientes.LastModified, Ven_Clientes.LastSync, Ven_Clientes.DeletedAt
 				FROM {{.DBName}}Ven_Clientes
 				LEFT JOIN {{.DBName}}Cnt_Terceros CLI ON CLI.CodTer = Ven_Clientes.Cedula
 				WHERE LTRIM(RTRIM(CLI.CodTer))<>'' {{.Filter}}
@@ -228,6 +230,7 @@ func GetCustomers(c *appContext, w http.ResponseWriter, r *http.Request) (int, e
 			return http.StatusInternalServerError, err
 		}
 
+		// Send records to object array
 		for rows.Next() {
 			err := rows.Scan(&cust.Id, &cust.Cedula, &cust.CodCli, &cust.Nombre_1, &cust.Nombre_2, &cust.Apellido_1, &cust.Apellido_2,
 				&cust.Nombre_Com, &cust.Nombre_Bus, &cust.Nombre_Cal, &cust.Telefono_1, &cust.Telefono_2,
@@ -235,7 +238,7 @@ func GetCustomers(c *appContext, w http.ResponseWriter, r *http.Request) (int, e
 				&cust.RegistraFecNac, &cust.FecNac, &cust.CodMcpio, &cust.CodDpto, &cust.TipCap, &cust.TipID,
 				&cust.CodList, &cust.FechaRegistro, &cust.MargenReteICA, &cust.RetAnyBase, &cust.CodVen,
 				&cust.CodZona, &cust.CodBarr, &cust.PlazoCR, &cust.ExentoIVA, &cust.Activo, &cust.MotivoBloqueo,
-				&cust.CodNeg, &cust.LastModified, &cust.LastSync)
+				&cust.CodNeg, &cust.LastModified, &cust.LastSync, &cust.DeletedAt)
 
 			if err != nil {
 				return http.StatusInternalServerError, err
@@ -341,4 +344,31 @@ func PutCustomers (c *appContext, w http.ResponseWriter, r *http.Request) (int, 
 	}
 	//fmt.Print("After If")
 	return http.StatusOK, nil
+}
+
+// Delete Customer
+func DeleteCustomer (c *appContext, w http.ResponseWriter, r *http.Request) (int, error) {
+	var id = mux.Vars(r)["id"] // id del cliente a eliminar ven_clientes.id
+	var client Customer_Table
+	//Set DataBaseName
+	DATABASE_NAME = r.Header.Get("host_database")
+	// Obtengo puntero a base de datos
+	db, ok := c.dbs[r.Header.Get("host_domain")]
+	if (ok) {
+		db.First(&client, id)
+		if !(&client == nil) {
+			if dbc := db.Unscoped().Delete(&client); dbc.Error != nil {
+				fmt.Println(dbc.Error)
+				return http.StatusInternalServerError, dbc.Error
+			} else {
+				return http.StatusOK, nil
+			}
+		} else {
+			fmt.Println("No ha sido encontrado el cliente con id ", id)
+			return http.StatusInternalServerError, nil
+		}
+	} else {
+		fmt.Println("No ha sido encontrado el dominio ", r.Header.Get("host_domain"))
+		return http.StatusInternalServerError, nil
+	}
 }
