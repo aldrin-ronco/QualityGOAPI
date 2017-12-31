@@ -50,9 +50,9 @@ type customer struct {
 	Activo         bool      `json:"activo"`
 	MotivoBloqueo  string    `json:"motivo_bloqueo"`
 	CodNeg         string    `json:"codneg"`
-	LastModified   time.Time `json:"last_modified"`
-	LastSync	  *time.Time `json:"last_sync"`
-	DeletedAt	  *time.Time `json:"deleted_at"`
+	Last_Modified  time.Time `json:"last_modified"`
+	Last_Sync	  *time.Time `json:"last_sync"`
+	Deleted_At	  *time.Time `json:"deleted_at"`
 }
 
 type Customer_Table struct {
@@ -70,9 +70,9 @@ type Customer_Table struct {
 	Activo        *bool   	`json:"activo"`
 	MotivoBloqueo string  	`json:"motivo_bloqueo"gorm:"column:motivobloqueo"`
 	CodNeg        string  	`json:"codneg"gorm:"column:codneg"`
-	LastModified  time.Time `json:"last_modified"gorm:"column:lastmodified"`
-	LastSync	 *time.Time `json:"last_sync"gorm:"column:lastsync"`
-	DeletedAt	 *time.Time `json:"deleted_at"gorm:"column:deletedat"`
+	Last_Modified time.Time `json:"last_modified"gorm:"column:last_modified"`
+	Last_Sync	 *time.Time `json:"last_sync"gorm:"column:last_sync"`
+	Deleted_At	 *time.Time `json:"deleted_at"gorm:"column:deleted_at"`
 }
 
 type pagination struct {
@@ -155,7 +155,7 @@ func GetCustomers(c *appContext, w http.ResponseWriter, r *http.Request) (int, e
 
 	// Just records with LastModified date diferent than lastSync
 	if for_sync {
-		sFilter_Query = "AND (Ven_Clientes.LastModified<>Ven_Clientes.LastSync OR Ven_Clientes.LastSync IS NULL) "
+		sFilter_Query = "AND (Ven_Clientes.Last_Modified<>Ven_Clientes.Last_Sync OR Ven_Clientes.Last_Sync IS NULL) "
 		sTop_Criteria = "TOP (50) " // Sync data in 50 records chuncks per request
 	}
 
@@ -185,7 +185,7 @@ func GetCustomers(c *appContext, w http.ResponseWriter, r *http.Request) (int, e
 				CLI.RegistraFecNac, ISNULL(CLI.FecNac,GetDate()) As FecNac, CLI.CodMcpio, CLI.CodDpto, CLI.TipCap, CLI.TipID, LTRIM(RTRIM(Ven_Clientes.CODLIST)) As CodList,
 				ISNULL(CLI.FechaRegistro,GetDate()) As FechaRegistro, Ven_Clientes.MARGENRETEICA, Ven_Clientes.RETANYBASE, Ven_Clientes.CodVen, Ven_Clientes.CodZona,
 				Ven_Clientes.CodBarr, Ven_Clientes.PlazoCR, Ven_Clientes.ExentoIVA, Ven_Clientes.Activo, Ven_Clientes.MotivoBloqueo, Ven_Clientes.CodNeg,
-				Ven_Clientes.LastModified, Ven_Clientes.LastSync, Ven_Clientes.DeletedAt
+				Ven_Clientes.Last_Modified, Ven_Clientes.Last_Sync, Ven_Clientes.Deleted_At
 				FROM {{.DBName}}Ven_Clientes
 				LEFT JOIN {{.DBName}}Cnt_Terceros CLI ON CLI.CodTer = Ven_Clientes.Cedula
 				WHERE Ven_Clientes.Id={{.Id}}
@@ -198,7 +198,7 @@ func GetCustomers(c *appContext, w http.ResponseWriter, r *http.Request) (int, e
 				CLI.RegistraFecNac, ISNULL(CLI.FecNac,GetDate()) As FecNac, CLI.CodMcpio, CLI.CodDpto, CLI.TipCap, CLI.TipID, LTRIM(RTRIM(Ven_Clientes.CODLIST)) As CodList,
 				ISNULL(CLI.FechaRegistro,GetDate()) As FechaRegistro, Ven_Clientes.MARGENRETEICA, Ven_Clientes.RETANYBASE, Ven_Clientes.CodVen, Ven_Clientes.CodZona,
 				Ven_Clientes.CodBarr, Ven_Clientes.PlazoCR, Ven_Clientes.ExentoIVA, Ven_Clientes.Activo, Ven_Clientes.MotivoBloqueo, Ven_Clientes.CodNeg,
-				Ven_Clientes.LastModified, Ven_Clientes.LastSync, Ven_Clientes.DeletedAt
+				Ven_Clientes.Last_Modified, Ven_Clientes.Last_Sync, Ven_Clientes.Deleted_At
 				FROM {{.DBName}}Ven_Clientes
 				LEFT JOIN {{.DBName}}Cnt_Terceros CLI ON CLI.CodTer = Ven_Clientes.Cedula
 				WHERE LTRIM(RTRIM(CLI.CodTer))<>'' {{.Filter}}
@@ -238,7 +238,7 @@ func GetCustomers(c *appContext, w http.ResponseWriter, r *http.Request) (int, e
 				&cust.RegistraFecNac, &cust.FecNac, &cust.CodMcpio, &cust.CodDpto, &cust.TipCap, &cust.TipID,
 				&cust.CodList, &cust.FechaRegistro, &cust.MargenReteICA, &cust.RetAnyBase, &cust.CodVen,
 				&cust.CodZona, &cust.CodBarr, &cust.PlazoCR, &cust.ExentoIVA, &cust.Activo, &cust.MotivoBloqueo,
-				&cust.CodNeg, &cust.LastModified, &cust.LastSync, &cust.DeletedAt)
+				&cust.CodNeg, &cust.Last_Modified, &cust.Last_Sync, &cust.Deleted_At)
 
 			if err != nil {
 				return http.StatusInternalServerError, err
