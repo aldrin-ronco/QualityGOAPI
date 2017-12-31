@@ -355,12 +355,15 @@ func DeleteCustomer (c *appContext, w http.ResponseWriter, r *http.Request) (int
 	// Obtengo puntero a base de datos
 	db, ok := c.dbs[r.Header.Get("host_domain")]
 	if (ok) {
-		db.First(&client, id)
-		if !(&client == nil) {
+		//fmt.Println("Id : ",id)
+		db.First(&client, id) // Tener en cuenta que esto es case sensitive, osea el campo en la tabla sql debe estar definido exactamente igual que el gorm:"column:xxxxx"
+		if (client.Id > 0) {
+			//if dbc := db.Unscoped().Where("Id = ?", id).Delete(&client); dbc.Error != nil {
 			if dbc := db.Unscoped().Delete(&client); dbc.Error != nil {
 				fmt.Println(dbc.Error)
 				return http.StatusInternalServerError, dbc.Error
 			} else {
+				//w.WriteHeader(http.StatusOK)
 				return http.StatusOK, nil
 			}
 		} else {
