@@ -304,7 +304,7 @@ func setup(writer http.ResponseWriter, request *http.Request, next http.HandlerF
 		// The connection is ever made to Master database
 		ctx.dbs[host_domain], err = gorm.Open("mssql", fmt.Sprintf("sqlserver://%s:%s@%s:%s?database=%s",
 		host_user, host_pwd, host_ip, host_port, "Master"))
-
+		ctx.dbs[host_domain].LogMode(true)
 		// Error check
 		if err != nil {
 			log.Println("Setup - >", err.Error())
