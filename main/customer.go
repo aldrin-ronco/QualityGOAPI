@@ -155,7 +155,7 @@ func GetCustomers(c *appContext, w http.ResponseWriter, r *http.Request) (int, e
 
 	// Just records with LastModified date diferent than lastSync
 	if for_sync {
-		sFilter_Query = "AND (Ven_Clientes.Last_Modified<>Ven_Clientes.Last_Sync OR Ven_Clientes.Deleted_At IS NOT NULL) "
+		sFilter_Query = "AND (Ven_Clientes.Last_Modified<>Ven_Clientes.Last_Sync OR Ven_Clientes.Last_Sync IS NULL OR Ven_Clientes.Deleted_At IS NOT NULL) "
 		sTop_Criteria = "TOP (5) " // Sync data in 5 records chuncks per request
 	}
 
