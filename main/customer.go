@@ -56,7 +56,7 @@ type customer struct {
 }
 
 type Customer_Table struct {
-	Id            int32   	`json:"id,string"gorm:"column:id"gorm:"primary_key"`
+	Id            int32   	`json:"id"gorm:"column:id"gorm:"primary_key"`
 	CodCli        string  	`json:"codcli"gorm:"column:codcli"`
 	Cedula        string  	`json:"cedula"`
 	CodList       string  	`json:"codlist"gorm:"column:codlist"`
