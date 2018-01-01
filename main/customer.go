@@ -356,8 +356,7 @@ func DeleteCustomer (c *appContext, w http.ResponseWriter, r *http.Request) (int
 	db, ok := c.dbs[r.Header.Get("host_domain")]
 	if (ok) {
 		//fmt.Println("Id : ",id)
-		db.First(&client, id) // Tener en cuenta que esto es case sensitive, osea el campo en la tabla sql debe estar definido exactamente igual que el gorm:"column:xxxxx"
-
+		db.Unscoped().First(&client, id) // Tener en cuenta que esto es case sensitive, osea el campo en la tabla sql debe estar definido exactamente igual que el gorm:"column:xxxxx"
 		fmt.Println("Find Result : ", client)
 		if (client.Id > 0) {
 			//if dbc := db.Unscoped().Where("Id = ?", id).Delete(&client); dbc.Error != nil {
