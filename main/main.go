@@ -59,6 +59,7 @@ func (ah appHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 // Globals
 var err error
 var ctx *appContext
+var DATABASE_NAME string
 
 // Entry POINT
 func main() {
@@ -78,6 +79,10 @@ func main() {
 	r.Handle("/customers/{id}", appHandler{ctx,PutCustomers}).Methods("PUT")
 	r.Handle("/customers/{id}", appHandler{ctx, GetCustomers}).Methods("GET", "OPTIONS")
 	r.Handle("/customers/{id}", appHandler{ctx, DeleteCustomer}).Methods("DELETE")
+
+	// Customers Meta Data Sync
+	r.Handle("/customers_mds", appHandler{ctx, PostCustomerMetaDataSync}).Methods("POST")
+	r.Handle("/customers_mds", appHandler{ctx, PutCustomerMetaDataSync}).Methods("PUT")
 
 	n := negroni.Classic()
 

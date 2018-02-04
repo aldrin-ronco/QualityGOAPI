@@ -86,8 +86,6 @@ type customers struct {
 	Customers  []customer `json:"data"`
 }
 
-var DATABASE_NAME string
-
 func (Customer_Table) TableName() string {
 	return DATABASE_NAME + ".dbo.ven_clientes"
 }
@@ -120,8 +118,8 @@ func GetCustomers(c *appContext, w http.ResponseWriter, r *http.Request) (int, e
 	vars := mux.Vars(r)
 	query := r.URL.Query()
 
-	sId, sFilter, sPage_size, sOffset, sPageNo, host_database, sForSync  := vars["id"], query.Get("filter"), query.Get("page_size"),
-		query.Get("offset"), query.Get("page_no"), r.Header.Get("host_database"), query.Get("for_sync") // Check if Id is provided
+	sId, sFilter, sPage_size, sOffset, sPageNo, host_database, sForSync, IMEI  := vars["id"], query.Get("filter"), query.Get("page_size"),
+		query.Get("offset"), query.Get("page_no"), r.Header.Get("host_database"), query.Get("for_sync"), query.Get("imei") // Check if Id is provided
 
 	// Low Cost concatenation process
 	sDBPrefix.WriteString(host_database)
@@ -136,6 +134,7 @@ func GetCustomers(c *appContext, w http.ResponseWriter, r *http.Request) (int, e
 		Filter     string
 		Top 	   string
 		Pagination string
+		Imei 	   string
 	}
 
 	// Casting
@@ -154,9 +153,14 @@ func GetCustomers(c *appContext, w http.ResponseWriter, r *http.Request) (int, e
 	}
 
 	// Just records with LastModified date diferent than lastSync
+	// OR Ven_Clientes.Deleted_At IS NOT NULL
 	if for_sync {
-		sFilter_Query = "AND (Ven_Clientes.Last_Modified<>Ven_Clientes.Last_Sync OR Ven_Clientes.Last_Sync IS NULL OR Ven_Clientes.Deleted_At IS NOT NULL) "
-		sTop_Criteria = "TOP (5) " // Sync data in 5 records chuncks per request
+		sFilter_Query = "AND (Ven_Clientes.Last_Modified<>VCMS.Last_Modified OR VCMS.Last_Modified IS NULL) "
+		sTop_Criteria = "TOP (50) " // Sync data in 5 records chuncks per request
+		if strings.Trim(IMEI, " ") == "" {
+			fmt.Println("For_Sync ha sido llamado sin IMEI !")
+			return http.StatusInternalServerError, nil
+		}
 	}
 
 	// Set Filter
@@ -173,7 +177,7 @@ func GetCustomers(c *appContext, w http.ResponseWriter, r *http.Request) (int, e
 	// Fill Values
 	substitute := query_values{Id: id, Page_Size: page_size, OffSet: offset,
 	DBName: sDBPrefix.String(), Filter: sFilter_Query, Pagination: sFilter_Pagination,
-	Top: sTop_Criteria}
+	Top: sTop_Criteria, Imei: IMEI}
 
 	// Query selection
 	switch {
@@ -201,6 +205,7 @@ func GetCustomers(c *appContext, w http.ResponseWriter, r *http.Request) (int, e
 				Ven_Clientes.Last_Modified, Ven_Clientes.Last_Sync, Ven_Clientes.Deleted_At
 				FROM {{.DBName}}Ven_Clientes
 				LEFT JOIN {{.DBName}}Cnt_Terceros CLI ON CLI.CodTer = Ven_Clientes.Cedula
+				LEFT JOIN {{.DBName}}Ven_Clientes_Meta_Sync VCMS ON VCMS.Client_Id = Ven_Clientes.Id AND LTRIM(RTRIM(VCMS.IMEI)) = '{{.Imei}}' 
 				WHERE LTRIM(RTRIM(CLI.CodTer))<>'' {{.Filter}}
 				ORDER BY CLI.Nombre_Com
 				{{.Pagination}}
@@ -227,6 +232,7 @@ func GetCustomers(c *appContext, w http.ResponseWriter, r *http.Request) (int, e
 		rows, err := db.Raw(sQuery.String()).Rows()
 
 		if err != nil {
+			fmt.Println(sQuery.String()) // Si hay error en la sentencia, quiero ver la sentencia
 			return http.StatusInternalServerError, err
 		}
 
@@ -247,7 +253,10 @@ func GetCustomers(c *appContext, w http.ResponseWriter, r *http.Request) (int, e
 		}
 
 		// Get pagination info
-		sQuery_Counter = fmt.Sprintf("SELECT Count(Id) As Total FROM %vVen_Clientes WHERE Cedula<>'' %v", sDBPrefix.String(), sFilter_Query)
+		sQuery_Counter = fmt.Sprintf(`SELECT Count(Ven_Clientes.Id) As Total 
+											 FROM %vVen_Clientes
+											 LEFT JOIN %vVen_Clientes_Meta_Sync VCMS ON VCMS.Client_Id = Ven_Clientes.Id AND LTRIM(RTRIM(VCMS.IMEI)) = '%v' 
+											 WHERE Ven_Clientes.Cedula<>'' %v`, sDBPrefix.String(), sDBPrefix.String(), IMEI, sFilter_Query)
 
 		rows, err = db.Raw(sQuery_Counter).Rows()
 		if err != nil {
@@ -329,7 +338,7 @@ func PutCustomers (c *appContext, w http.ResponseWriter, r *http.Request) (int, 
 	//}
 	//fmt.Print("Before If")
 	if ok {
-		db.First(&client, id)
+		db.Unscoped().First(&client, id)
 		//fmt.Println(params)
 		//fmt.Print("Before Second If")
 		if dbc := db.Model(&client).Updates(&params); dbc.Error != nil {
@@ -357,7 +366,6 @@ func DeleteCustomer (c *appContext, w http.ResponseWriter, r *http.Request) (int
 	if (ok) {
 		//fmt.Println("Id : ",id)
 		db.Unscoped().First(&client, id) // Tener en cuenta que esto es case sensitive, osea el campo en la tabla sql debe estar definido exactamente igual que el gorm:"column:xxxxx"
-		fmt.Println("Find Result : ", client)
 		if (client.Id > 0) {
 			//if dbc := db.Unscoped().Where("Id = ?", id).Delete(&client); dbc.Error != nil {
 			if dbc := db.Unscoped().Delete(&client); dbc.Error != nil {
