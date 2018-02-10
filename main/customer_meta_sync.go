@@ -12,7 +12,6 @@ import (
 )
 
 type Customer_Meta_Sync struct {
-	Id 				int 		`json:"id"gorm:"column:id"gorm:"primary_key"`
 	Client_Id 		int 		`json:"client_id"gorm:"column:client_id"`
 	Imei 			string 		`json:"imei"gorm:"column:imei"`
 	Last_Modified	time.Time 	`json:"last_modified"gorm:"column:last_modified"`
@@ -33,6 +32,7 @@ func GetCustomerMetaDataSync (c *appContext, w http.ResponseWriter, r *http.Requ
 	var sQuery bytes.Buffer
 	var Client_Id int = 0
 
+	// Set DataBase
 	DATABASE_NAME = r.Header.Get("host_database")
 
 	// Template Query String
@@ -118,7 +118,7 @@ func PutCustomerMetaDataSync (c *appContext, w http.ResponseWriter, r *http.Requ
 	db, ok := c.dbs[r.Header.Get("host_domain")]
 	if ok {
 		db.Unscoped().First(&client_meta_data_sync, "client_id = ? AND imei = ?", Client_Id, IMEI)
-		if client_meta_data_sync.Id != 0 {
+		if client_meta_data_sync.Client_Id != 0 {
 			if dbc := db.Model(&client_meta_data_sync).Updates(&params); dbc.Error != nil {
 				return http.StatusInternalServerError, dbc.Error
 			}
