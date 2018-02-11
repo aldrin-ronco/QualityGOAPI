@@ -37,6 +37,13 @@ type appHandler struct {
 	h func(c *appContext, w http.ResponseWriter, r *http.Request) (int, error)
 }
 
+// Global Pagination struct
+type pagination struct {
+	Total     uint64 `json:"total"`
+	Page_Size int    `json:"page_size"`
+	Page_No   int    `json:"page_no"`
+}
+
 // Server HTTP
 func (ah appHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// Updated to pass ah.appContext as a parameter to our handler type.
@@ -83,6 +90,10 @@ func main() {
 	// Customers Meta Data Sync
 	r.Handle("/customers_mds", appHandler{ctx, PostCustomerMetaDataSync}).Methods("POST")
 	r.Handle("/customers_mds", appHandler{ctx, PutCustomerMetaDataSync}).Methods("PUT")
+
+	// Tercero
+	r.Handle("/terceros", appHandler{ctx, GetTerceros}).Methods("GET", "OPTIONS")
+	r.Handle("/terceros/{id}", appHandler{ctx, GetTerceros}).Methods("GET", "OPTIONS")
 
 	n := negroni.Classic()
 

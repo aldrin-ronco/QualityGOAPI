@@ -75,12 +75,6 @@ type Customer_Table struct {
 	Deleted_At	 *time.Time `json:"deleted_at"gorm:"column:deleted_at"`
 }
 
-type pagination struct {
-	Total     uint64 `json:"total"`
-	Page_Size int    `json:"page_size"`
-	Page_No   int    `json:"page_no"`
-}
-
 type customers struct {
 	Pagination pagination `json:"pagination"`
 	Customers  []customer `json:"data"`
