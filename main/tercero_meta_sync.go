@@ -12,6 +12,7 @@ import (
 )
 
 type Tercero_Meta_Sync struct {
+	Id 				int64 		`json:"id"gorm:"column:id"gorm:"primary_key"`
 	Tercero_Id 		int 		`json:"tercero_id"gorm:"column:tercero_id"`
 	Imei 			string 		`json:"imei"gorm:"column:imei"`
 	Last_Modified	time.Time 	`json:"last_modified"gorm:"column:last_modified"`
@@ -122,6 +123,7 @@ func PutTerceroMetaDataSync (c *appContext, w http.ResponseWriter, r *http.Reque
 	db, ok := c.dbs[r.Header.Get("host_domain")]
 	if ok {
 		db.Unscoped().Find(&tercero_meta_data_sync, "tercero_id = ? AND imei = ?", tercero_id, IMEI)
+		fmt.Println(tercero_meta_data_sync)
 		if tercero_meta_data_sync.Tercero_Id != 0 {
 			if dbc := db.Model(&tercero_meta_data_sync).Updates(&params); dbc.Error != nil {
 				fmt.Println(err.Error())

@@ -9,9 +9,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
-)
+	)
 
 type Customer_Meta_Sync struct {
+	Id   			int64 		`json:"id"gorm:"column:id"gorm:"primary_key"`
 	Client_Id 		int 		`json:"client_id"gorm:"column:client_id"`
 	Imei 			string 		`json:"imei"gorm:"column:imei"`
 	Last_Modified	time.Time 	`json:"last_modified"gorm:"column:last_modified"`
