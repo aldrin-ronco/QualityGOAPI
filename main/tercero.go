@@ -204,31 +204,33 @@ func GetTerceros(c *appContext, w http.ResponseWriter, r *http.Request) (int, er
 			response.Terceros = append(response.Terceros, tercero)
 		}
 
-		// Get pagination info
-		sQuery_Counter = fmt.Sprintf(`SELECT Count(Cnt_Terceros.id) As Total 
+		// Get pagination info Just If Necesary
+		var counter uint64
+		if strings.Trim(sPage_size, " ") != "" && strings.Trim(sPageNo, " ") != "" {
+			sQuery_Counter = fmt.Sprintf(`SELECT Count(Cnt_Terceros.id) As Total 
 											 FROM %vCnt_Terceros
 											 LEFT JOIN %vCnt_Terceros_Meta_Sync TMS ON TMS.tercero_id = Cnt_Terceros.id AND LTRIM(RTRIM(TMS.IMEI)) = '%v' 
 											 WHERE Cnt_Terceros.CodTer<>'' %v`, sDBPrefix.String(), sDBPrefix.String(), IMEI, sFilter_Query)
 
-		rows, err = db.Raw(sQuery_Counter).Rows()
-		if err != nil {
-			fmt.Println(err.Error())
-			return http.StatusInternalServerError, err
-		}
-
-		var counter uint64
-		if rows.Next() {
-			err = rows.Scan(&counter)
+			rows, err = db.Raw(sQuery_Counter).Rows()
 			if err != nil {
 				fmt.Println(err.Error())
 				return http.StatusInternalServerError, err
 			}
-		}
 
+			if rows.Next() {
+				err = rows.Scan(&counter)
+				if err != nil {
+					fmt.Println(err.Error())
+					return http.StatusInternalServerError, err
+				}
+			}
+		}
 		response.Pagination.Total = counter
 		response.Pagination.Page_Size = page_size
 		response.Pagination.Page_No = page_no
 		json.NewEncoder(w).Encode(response)
 	}
+
 	return http.StatusOK, nil
 }

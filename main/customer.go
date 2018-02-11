@@ -246,25 +246,27 @@ func GetCustomers(c *appContext, w http.ResponseWriter, r *http.Request) (int, e
 			custmrs.Customers = append(custmrs.Customers, cust)
 		}
 
-		// Get pagination info
-		sQuery_Counter = fmt.Sprintf(`SELECT Count(Ven_Clientes.Id) As Total 
+		// Get pagination info just if Necesary
+		var counter uint64 = 0
+		if strings.Trim(sPage_size, " ") != "" && strings.Trim(sPageNo, " ") != "" {
+
+			sQuery_Counter = fmt.Sprintf(`SELECT Count(Ven_Clientes.Id) As Total 
 											 FROM %vVen_Clientes
 											 LEFT JOIN %vVen_Clientes_Meta_Sync VCMS ON VCMS.Client_Id = Ven_Clientes.Id AND LTRIM(RTRIM(VCMS.IMEI)) = '%v' 
 											 WHERE Ven_Clientes.Cedula<>'' %v`, sDBPrefix.String(), sDBPrefix.String(), IMEI, sFilter_Query)
 
-		rows, err = db.Raw(sQuery_Counter).Rows()
-		if err != nil {
-			return http.StatusInternalServerError, err
-		}
-
-		var counter uint64
-		if rows.Next() {
-			err = rows.Scan(&counter)
+			rows, err = db.Raw(sQuery_Counter).Rows()
 			if err != nil {
 				return http.StatusInternalServerError, err
 			}
-		}
 
+			if rows.Next() {
+				err = rows.Scan(&counter)
+				if err != nil {
+					return http.StatusInternalServerError, err
+				}
+			}
+		}
 		custmrs.Pagination.Total = counter
 		custmrs.Pagination.Page_Size = page_size
 		custmrs.Pagination.Page_No = page_no
