@@ -248,6 +248,7 @@ func GetCustomers(c *appContext, w http.ResponseWriter, r *http.Request) (int, e
 
 		// Get pagination info just if Necesary
 		var counter uint64 = 0
+
 		if strings.Trim(sPage_size, " ") != "" && strings.Trim(sPageNo, " ") != "" {
 
 			sQuery_Counter = fmt.Sprintf(`SELECT Count(Ven_Clientes.Id) As Total 
@@ -272,6 +273,7 @@ func GetCustomers(c *appContext, w http.ResponseWriter, r *http.Request) (int, e
 		custmrs.Pagination.Page_No = page_no
 		json.NewEncoder(w).Encode(custmrs)
 	}
+
 	return http.StatusOK, nil
 }
 
