@@ -92,12 +92,12 @@ func main() {
 	r.Handle("/customers_mds", appHandler{ctx, PutCustomerMetaDataSync}).Methods("PUT")
 
 	// Tercero
-	r.Handle("/terceros", appHandler{ctx, GetTerceros}).Methods("GET", "OPTIONS")
-	r.Handle("/terceros/{id}", appHandler{ctx, GetTerceros}).Methods("GET", "OPTIONS")
+	r.Handle("/others", appHandler{ctx, GetTerceros}).Methods("GET", "OPTIONS")
+	r.Handle("/others/{id}", appHandler{ctx, GetTerceros}).Methods("GET", "OPTIONS")
 
 	// Tercero Meta Data Sync
-	r.Handle("/terceros_mds", appHandler{ctx, PostTerceroMetaDataSync}).Methods("POST")
-	r.Handle("/terceros_mds", appHandler{ctx, PutTerceroMetaDataSync}).Methods("PUT")
+	r.Handle("/others_mds", appHandler{ctx, PostTerceroMetaDataSync}).Methods("POST")
+	r.Handle("/others_mds", appHandler{ctx, PutTerceroMetaDataSync}).Methods("PUT")
 
 	n := negroni.Classic()
 
