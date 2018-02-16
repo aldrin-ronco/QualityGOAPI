@@ -126,7 +126,7 @@ func GetSellers(c *appContext, w http.ResponseWriter, r *http.Request) (int, err
   					   Ven_Vendedor.activo, Ven_Vendedor.last_modified, Ven_Vendedor.deleted_at
   					   FROM {{.DBName}}Ven_Vendedor
 					   LEFT JOIN {{.DBName}}Cnt_Terceros VEN ON VEN.CodTer = Ven_Vendedor.cedula
-					   WHERE Ven_Vendedor.id = {{.id}}
+					   WHERE Ven_Vendedor.id = {{.Id}}
 					   ORDER BY VEN.nombre_com`
 	default:
 		sQuery_TMPL = `SELECT {{.Top}} Ven_Vendedor.id, Ven_Vendedor.cedula, Ven_Vendedor.codven, VEN.nombre_com, 
