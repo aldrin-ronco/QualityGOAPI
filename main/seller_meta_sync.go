@@ -22,7 +22,7 @@ type seller_query_values struct {
 }
 
 func (Seller_Meta_Sync) TableName() string {
-	return DATABASE_NAME + ".dbo.Cnt_Terceros_Meta_Sync"
+	return DATABASE_NAME + ".dbo.Ven_Vendedor_Meta_Sync"
 }
 
 func PostSellerMetaDataSync (c *appContext, w http.ResponseWriter, r *http.Request) (int, error) {
@@ -31,6 +31,7 @@ func PostSellerMetaDataSync (c *appContext, w http.ResponseWriter, r *http.Reque
 	DATABASE_NAME = r.Header.Get("host_database")
 	// Obtengo el cuerpo del body
 	err := json.NewDecoder(r.Body).Decode(&seller_meta_data)
+	fmt.Println(seller_meta_data)
 	if err != nil {
 		fmt.Println(err.Error())
 		return http.StatusInternalServerError, err
