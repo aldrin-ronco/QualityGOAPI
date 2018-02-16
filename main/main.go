@@ -99,6 +99,12 @@ func main() {
 	r.Handle("/others_mds", appHandler{ctx, PostTerceroMetaDataSync}).Methods("POST")
 	r.Handle("/others_mds", appHandler{ctx, PutTerceroMetaDataSync}).Methods("PUT")
 
+	// Sellers
+	r.Handle("/sellers", appHandler{ctx, GetSellers}).Methods("GET", "OPTIONS")
+	r.Handle("/sellers/{id}", appHandler{ctx, GetSellers}).Methods("GET", "OPTIONS")
+	r.Handle("/sellers_mds", appHandler{ctx, PostSellerMetaDataSync}).Methods("POST")
+	r.Handle("/sellers_mds", appHandler{ctx, PutSellerMetaDataSync}).Methods("PUT")
+
 	n := negroni.Classic()
 
 	// Middleware que se encarga de setear la base de datos
