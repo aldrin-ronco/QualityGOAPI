@@ -23,8 +23,8 @@ type Seller struct {
 }
 
 type Response_Seller struct {
-	Pagination 	pagination
-	Sellers		[]Seller
+	Pagination 	pagination `json:"pagination"`
+	Sellers		[]Seller   `json:"data"`
 }
 
 func (Seller) TableName() string {
