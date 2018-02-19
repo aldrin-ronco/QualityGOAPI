@@ -13,33 +13,34 @@ import (
 )
 
 type Tercero struct {
-	Id				string 		`json:"id"`
-	CodTer			string 		`json:"codter"`
-	Nombre_1		string 		`json:"nombre_1"`
-	Nombre_2		string 		`json:"nombre_2"`
-	Apellido_1		string 		`json:"apellido_1"`
-	Apellido_2		string 		`json:"apellido_2"`
-	Telefono_1		string 		`json:"telefono_1"`
-	Telefono_2		string 		`json:"telefono_2"`
-	Celular_1		string 		`json:"celular_1"`
-	Celular_2		string 		`json:"celular_2"`
-	Direccion 		string 		`json:"direccion"`
-	Regimen			string 		`json:"regimen"`
-	Email			string 		`json:"email"`
-	Registra_FecNac	string 		`json:"registra_fecnac"`
-	FecNac		   *time.Time	`json:"fecnac"`
-	Nombre_Com		string 		`json:"nombre_com"`
-	TipId			string 		`json:"tipid"`
-	CodDpto			string 		`json:"coddpto"`
-	CodMcpio		string 		`json:"codmcpio"`
-	TipCap			string 		`json:"tipcap"`
-	Tels			string 		`json:"tels"`
-	Nombre_Cal		string 		`json:"nombre_cal"`
-	Nombre_Bus		string 		`json:"nombre_bus"`
-	Fecha_Registro *time.Time 	`json:"fecha_registro"`
-	CodPais			string 		`json:"codpais"`
-	Last_Modified	time.Time 	`json:"last_modified"`
-	Deleted_At	   *time.Time 	`json:"deleted_at"`
+	Id					string 		`json:"id"`
+	CodTer				string 		`json:"codter"`
+	Nombre_1			string 		`json:"nombre_1"`
+	Nombre_2			string 		`json:"nombre_2"`
+	Apellido_1			string 		`json:"apellido_1"`
+	Apellido_2			string 		`json:"apellido_2"`
+	Telefono_1			string 		`json:"telefono_1"`
+	Telefono_2			string 		`json:"telefono_2"`
+	Celular_1			string 		`json:"celular_1"`
+	Celular_2			string 		`json:"celular_2"`
+	Direccion 			string 		`json:"direccion"`
+	Regimen				string 		`json:"regimen"`
+	Email				string 		`json:"email"`
+	Registra_FecNac		string 		`json:"registra_fecnac"`
+	FecNac		   		*time.Time	`json:"fecnac"`
+	Nombre_Com			string 		`json:"nombre_com"`
+	TipId				string 		`json:"tipid"`
+	CodDpto				string 		`json:"coddpto"`
+	CodMcpio			string 		`json:"codmcpio"`
+	TipCap				string 		`json:"tipcap"`
+	Tels				string 		`json:"tels"`
+	Nombre_Cal			string 		`json:"nombre_cal"`
+	Nombre_Bus			string 		`json:"nombre_bus"`
+	Fecha_Registro 		*time.Time 	`json:"fecha_registro"`
+	CodPais				string 		`json:"codpais"`
+	Last_Modified		time.Time 	`json:"last_modified"`
+	Last_Modified_Mds	*time.Time  `json:"last_modified_mds"`
+	Deleted_At	   		*time.Time 	`json:"deleted_at"`
 }
 
 type Response struct {
@@ -146,8 +147,9 @@ func GetTerceros(c *appContext, w http.ResponseWriter, r *http.Request) (int, er
    				       Cnt_Terceros.telefono_1, Cnt_Terceros.telefono_2, Cnt_Terceros.celular_1, Cnt_Terceros.celular_2, Cnt_Terceros.direccion, Cnt_Terceros.regimen,
 					   Cnt_Terceros.email, Cnt_Terceros.registrafecnac, Cnt_Terceros.fecnac, Cnt_Terceros.nombre_com, Cnt_Terceros.tipid, Cnt_Terceros.coddpto,
 					   Cnt_Terceros.codmcpio, Cnt_Terceros.tipcap, Cnt_Terceros.tels, nombre_cal, Cnt_Terceros.nombre_bus, Cnt_Terceros.fecharegistro,
-					   Cnt_Terceros.codpais, Cnt_Terceros.last_modified, Cnt_Terceros.deleted_at  
+					   Cnt_Terceros.codpais, Cnt_Terceros.last_modified, TMS.last_modified as last_modified_mds, Cnt_Terceros.deleted_at  
 					   FROM {{.DBName}}Cnt_Terceros
+				       LEFT JOIN {{.DBName}}Cnt_Terceros_Meta_Sync TMS ON TMS.tercero_id = Cnt_Terceros.id AND LTRIM(RTRIM(TMS.IMEI)) = '{{.Imei}}' 
 					   WHERE Cnt_Terceros.id={{.Id}}
 					   ORDER BY Cnt_Terceros.Nombre_Com`
 
@@ -156,7 +158,7 @@ func GetTerceros(c *appContext, w http.ResponseWriter, r *http.Request) (int, er
    				       Cnt_Terceros.telefono_1, Cnt_Terceros.telefono_2, Cnt_Terceros.celular_1, Cnt_Terceros.celular_2, Cnt_Terceros.direccion, Cnt_Terceros.regimen,
 					   Cnt_Terceros.email, Cnt_Terceros.registrafecnac, Cnt_Terceros.fecnac, Cnt_Terceros.nombre_com, Cnt_Terceros.tipid, Cnt_Terceros.coddpto,
 					   Cnt_Terceros.codmcpio, Cnt_Terceros.tipcap, Cnt_Terceros.tels, nombre_cal, Cnt_Terceros.nombre_bus, Cnt_Terceros.fecharegistro,
-					   Cnt_Terceros.codpais, Cnt_Terceros.last_modified, Cnt_Terceros.deleted_at  
+					   Cnt_Terceros.codpais, Cnt_Terceros.last_modified, TMS.last_modified As last_modified_mds, Cnt_Terceros.deleted_at  
 					   FROM {{.DBName}}Cnt_Terceros 
 				       LEFT JOIN {{.DBName}}Cnt_Terceros_Meta_Sync TMS ON TMS.tercero_id = Cnt_Terceros.id AND LTRIM(RTRIM(TMS.IMEI)) = '{{.Imei}}' 
 					   WHERE LTRIM(RTRIM(Cnt_Terceros.CodTer))<>'' {{.Filter}}
@@ -195,7 +197,7 @@ func GetTerceros(c *appContext, w http.ResponseWriter, r *http.Request) (int, er
 			err := rows.Scan(&tercero.Id, &tercero.CodTer, &tercero.Nombre_1, &tercero.Nombre_2, &tercero.Apellido_1, &tercero.Apellido_2, &tercero.Telefono_1, &tercero.Telefono_2,
 				&tercero.Celular_1, &tercero.Celular_2, &tercero.Direccion, &tercero.Regimen, &tercero.Email, &tercero.Registra_FecNac, &tercero.FecNac, &tercero.Nombre_Com,
 				&tercero.TipId, &tercero.CodDpto, &tercero.CodMcpio, &tercero.TipCap, &tercero.Tels, &tercero.Nombre_Cal, &tercero.Nombre_Bus, &tercero.Fecha_Registro,
-				&tercero.CodPais, &tercero.Last_Modified, &tercero.Deleted_At)
+				&tercero.CodPais, &tercero.Last_Modified, &tercero.Last_Modified_Mds, &tercero.Deleted_At)
 
 			if err != nil {
 				fmt.Println(err.Error())

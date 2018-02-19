@@ -13,13 +13,14 @@ import (
 )
 
 type Seller struct {
-	Id 				int 		`json:"id"gorm:"column:id"gorm:"primary_key"`
-	Cedula			string 		`json:"cedula"gorm:"column:cedula"`
-	Codven			string 		`json:"codven"gorm:"column:codven"`
-	Nombre_Com		string 		`json:"nombre_com"`
-	Activo			bool 		`json:"activo"gorm:"column:activo"`
-	Last_Modified 	time.Time 	`json:"last_modified"gorm:"column:last_modified"`
-	Deleted_At	   *time.Time 	`json:"deleted_at"gorm:"column:deleted_at"`
+	Id 					int 		`json:"id"gorm:"column:id"gorm:"primary_key"`
+	Cedula				string 		`json:"cedula"gorm:"column:cedula"`
+	Codven				string 		`json:"codven"gorm:"column:codven"`
+	Nombre_Com			string 		`json:"nombre_com"`
+	Activo				bool 		`json:"activo"gorm:"column:activo"`
+	Last_Modified 		time.Time 	`json:"last_modified"gorm:"column:last_modified"`
+	Last_Modified_Mds	*time.Time  `json:"last_modified_mds"`
+	Deleted_At	   		*time.Time 	`json:"deleted_at"gorm:"column:deleted_at"`
 }
 
 type Response_Seller struct {
@@ -123,14 +124,15 @@ func GetSellers(c *appContext, w http.ResponseWriter, r *http.Request) (int, err
 	switch {
 	case strings.Trim(sId, " ") != "": // If a customer id is provided
 		sQuery_TMPL = `SELECT Ven_Vendedor.id, Ven_Vendedor.cedula, Ven_Vendedor.codven, VEN.nombre_com, 
-  					   Ven_Vendedor.activo, Ven_Vendedor.last_modified, Ven_Vendedor.deleted_at
+  					   Ven_Vendedor.activo, Ven_Vendedor.last_modified, VMS.last_modified As last_modified_mds, Ven_Vendedor.deleted_at
   					   FROM {{.DBName}}Ven_Vendedor
 					   LEFT JOIN {{.DBName}}Cnt_Terceros VEN ON VEN.CodTer = Ven_Vendedor.cedula
+					   LEFT JOIN {{.DBName}}Ven_Vendedor_Meta_Sync VMS ON VMS.vendedor_id = ven_vendedor.id AND LTRIM(RTRIM(VMS.IMEI)) = '{{.Imei}}'
 					   WHERE Ven_Vendedor.id = {{.Id}}
 					   ORDER BY VEN.nombre_com`
 	default:
 		sQuery_TMPL = `SELECT {{.Top}} Ven_Vendedor.id, Ven_Vendedor.cedula, Ven_Vendedor.codven, VEN.nombre_com, 
-					   Ven_Vendedor.activo, Ven_Vendedor.last_modified, Ven_Vendedor.deleted_at
+					   Ven_Vendedor.activo, Ven_Vendedor.last_modified, VMS.last_modified As last_modified_mds, Ven_Vendedor.deleted_at
   					   FROM {{.DBName}}Ven_Vendedor
 					   LEFT JOIN {{.DBName}}Cnt_Terceros VEN ON VEN.CodTer = Ven_Vendedor.cedula
 					   LEFT JOIN {{.DBName}}Ven_Vendedor_Meta_Sync VMS ON VMS.vendedor_id = ven_vendedor.id AND LTRIM(RTRIM(VMS.IMEI)) = '{{.Imei}}' 
@@ -167,7 +169,7 @@ func GetSellers(c *appContext, w http.ResponseWriter, r *http.Request) (int, err
 
 		// Send records to object array
 		for rows.Next() {
-			err := rows.Scan(&seller.Id, &seller.Cedula, &seller.Codven, &seller.Nombre_Com, &seller.Activo, &seller.Last_Modified, &seller.Deleted_At)
+			err := rows.Scan(&seller.Id, &seller.Cedula, &seller.Codven, &seller.Nombre_Com, &seller.Activo, &seller.Last_Modified, &seller.Last_Modified_Mds, &seller.Deleted_At)
 
 			if err != nil {
 				fmt.Println(err.Error())

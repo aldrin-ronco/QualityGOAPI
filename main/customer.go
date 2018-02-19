@@ -14,65 +14,64 @@ import (
 )
 
 type customer struct {
-	Id             string    `json:"id"`
-	CodCli         string    `json:"codcli"`
-	Cedula         string    `json:"cedula"`
-	Nombre_1       string    `json:"nombre_1"`
-	Nombre_2       string    `json:"nombre_2"`
-	Apellido_1     string    `json:"apellido_1"`
-	Apellido_2     string    `json:"apellido_2"`
-	Nombre_Com     string    `json:"nombre_com"`
-	Nombre_Bus     string    `json:"nombre_bus"`
-	Nombre_Cal     string    `json:"nombre_cal"`
-	Telefono_1     string    `json:"telefono_1"`
-	Telefono_2     string    `json:"telefono_2"`
-	Celular_1      string    `json:"celular_1"`
-	Celular_2      string    `json:"celular_2"`
-	TELS           string    `json:"tels"`
-	Direccion      string    `json:"direccion"`
-	Regimen        string    `json:"regimen"`
-	EMail          string    `json:"email"`
-	RegistraFecNac bool      `json:"registra_fec_nac"`
-	FecNac         time.Time `json:"fecnac"`
-	CodMcpio       string    `json:"codmcpio"`
-	CodDpto        string    `json:"coddpto"`
-	TipCap         int8      `json:"tipcap"`
-	TipID          string    `json:"tipid"`
-	CodList        string    `json:"codlist"`
-	FechaRegistro  time.Time `json:"fecha_registro"`
-	MargenReteICA  float32   `json:"margen_rete_ica"`
-	RetAnyBase     bool      `json:"ret_any_base"`
-	CodVen         string    `json:"codven"`
-	CodZona        string    `json:"codzona"`
-	CodBarr		   string	 `json:"codbarr"`
-	PlazoCR        int8      `json:"plazo_cr"`
-	ExentoIVA      bool      `json:"exento_iva"`
-	Activo         bool      `json:"activo"`
-	MotivoBloqueo  string    `json:"motivo_bloqueo"`
-	CodNeg         string    `json:"codneg"`
-	Last_Modified  time.Time `json:"last_modified"`
-	Last_Sync	  *time.Time `json:"last_sync"`
-	Deleted_At	  *time.Time `json:"deleted_at"`
+	Id             		string     `json:"id"`
+	CodCli         		string     `json:"codcli"`
+	Cedula         		string     `json:"cedula"`
+	Nombre_1       		string     `json:"nombre_1"`
+	Nombre_2       		string     `json:"nombre_2"`
+	Apellido_1     		string     `json:"apellido_1"`
+	Apellido_2     		string     `json:"apellido_2"`
+	Nombre_Com     		string     `json:"nombre_com"`
+	Nombre_Bus     		string     `json:"nombre_bus"`
+	Nombre_Cal     		string     `json:"nombre_cal"`
+	Telefono_1     		string     `json:"telefono_1"`
+	Telefono_2     		string     `json:"telefono_2"`
+	Celular_1      		string     `json:"celular_1"`
+	Celular_2      		string     `json:"celular_2"`
+	TELS           		string     `json:"tels"`
+	Direccion      		string     `json:"direccion"`
+	Regimen        		string     `json:"regimen"`
+	EMail          		string     `json:"email"`
+	RegistraFecNac 		bool       `json:"registra_fec_nac"`
+	FecNac         		time.Time  `json:"fecnac"`
+	CodMcpio       		string     `json:"codmcpio"`
+	CodDpto        		string     `json:"coddpto"`
+	TipCap         		int8       `json:"tipcap"`
+	TipID          		string     `json:"tipid"`
+	CodList        		string     `json:"codlist"`
+	FechaRegistro  		time.Time  `json:"fecha_registro"`
+	MargenReteICA  		float32    `json:"margen_rete_ica"`
+	RetAnyBase     		bool       `json:"ret_any_base"`
+	CodVen         		string     `json:"codven"`
+	CodZona        		string     `json:"codzona"`
+	CodBarr		   		string	   `json:"codbarr"`
+	PlazoCR        		int8       `json:"plazo_cr"`
+	ExentoIVA      		bool       `json:"exento_iva"`
+	Activo         		bool       `json:"activo"`
+	MotivoBloqueo  		string     `json:"motivo_bloqueo"`
+	CodNeg         		string     `json:"codneg"`
+	Last_Modified  		time.Time  `json:"last_modified"`
+	Last_Modified_Mds  *time.Time  `json:"last_modified_mds"`
+	Deleted_At	  	   *time.Time  `json:"deleted_at"`
 }
 
 type Customer_Table struct {
-	Id            int32   	`json:"id"gorm:"column:id"gorm:"primary_key"`
-	CodCli        string  	`json:"codcli"gorm:"column:codcli"`
-	Cedula        string  	`json:"cedula"`
-	CodList       string  	`json:"codlist"gorm:"column:codlist"`
-	Margenreteica float32 	`json:"margen_rete_ica,string"gorm:"column:margenreteica"`
-	Retanybase    *bool   	`json:"ret_any_base"`
-	CodVen        string  	`json:"codven"gorm:"column:codven"`
-	CodZona       string  	`json:"codzona"gorm:"column:codzona"`
-	CodBarr		  string	`json:"codbarr"gorm:"column:codbarr"`
-	PlazoCR       int8    	`json:"plazo_cr"gorm:"column:plazocr"`
-	ExentoIVA     *bool   	`json:"exento_iva"gorm:"column:exentoiva"`
-	Activo        *bool   	`json:"activo"`
-	MotivoBloqueo string  	`json:"motivo_bloqueo"gorm:"column:motivobloqueo"`
-	CodNeg        string  	`json:"codneg"gorm:"column:codneg"`
-	Last_Modified time.Time `json:"last_modified"gorm:"column:last_modified"`
-	Last_Sync	 *time.Time `json:"last_sync"gorm:"column:last_sync"`
-	Deleted_At	 *time.Time `json:"deleted_at"gorm:"column:deleted_at"`
+	Id            		int32     `json:"id"gorm:"column:id"gorm:"primary_key"`
+	CodCli        		string    `json:"codcli"gorm:"column:codcli"`
+	Cedula        		string    `json:"cedula"`
+	CodList       		string    `json:"codlist"gorm:"column:codlist"`
+	Margenreteica 		float32   `json:"margen_rete_ica,string"gorm:"column:margenreteica"`
+	Retanybase    		*bool     `json:"ret_any_base"`
+	CodVen        		string    `json:"codven"gorm:"column:codven"`
+	CodZona       		string    `json:"codzona"gorm:"column:codzona"`
+	CodBarr		  		string	  `json:"codbarr"gorm:"column:codbarr"`
+	PlazoCR       		int8      `json:"plazo_cr"gorm:"column:plazocr"`
+	ExentoIVA     	   *bool   	  `json:"exento_iva"gorm:"column:exentoiva"`
+	Activo        		*bool     `json:"activo"`
+	MotivoBloqueo 		string    `json:"motivo_bloqueo"gorm:"column:motivobloqueo"`
+	CodNeg        		string    `json:"codneg"gorm:"column:codneg"`
+	Last_Modified 		time.Time `json:"last_modified"gorm:"column:last_modified"`
+	Deleted_At	 	   *time.Time `json:"deleted_at"gorm:"column:deleted_at"`
 }
 
 type customers struct {
@@ -183,9 +182,10 @@ func GetCustomers(c *appContext, w http.ResponseWriter, r *http.Request) (int, e
 				CLI.RegistraFecNac, ISNULL(CLI.FecNac,GetDate()) As FecNac, CLI.CodMcpio, CLI.CodDpto, CLI.TipCap, CLI.TipID, LTRIM(RTRIM(Ven_Clientes.CODLIST)) As CodList,
 				ISNULL(CLI.FechaRegistro,GetDate()) As FechaRegistro, Ven_Clientes.MARGENRETEICA, Ven_Clientes.RETANYBASE, Ven_Clientes.CodVen, Ven_Clientes.CodZona,
 				Ven_Clientes.CodBarr, Ven_Clientes.PlazoCR, Ven_Clientes.ExentoIVA, Ven_Clientes.Activo, Ven_Clientes.MotivoBloqueo, Ven_Clientes.CodNeg,
-				Ven_Clientes.Last_Modified, Ven_Clientes.Last_Sync, Ven_Clientes.Deleted_At
+				Ven_Clientes.Last_Modified, VCMS.Last_Modified As Last_Modified_Mds, Ven_Clientes.Deleted_At
 				FROM {{.DBName}}Ven_Clientes
 				LEFT JOIN {{.DBName}}Cnt_Terceros CLI ON CLI.CodTer = Ven_Clientes.Cedula
+				LEFT JOIN {{.DBName}}Ven_Clientes_Meta_Sync VCMS ON VCMS.Client_Id = Ven_Clientes.Id AND LTRIM(RTRIM(VCMS.IMEI)) = '{{.Imei}}' 
 				WHERE Ven_Clientes.Id={{.Id}}
 				ORDER BY CLI.Nombre_Com`
 	default:
@@ -196,7 +196,7 @@ func GetCustomers(c *appContext, w http.ResponseWriter, r *http.Request) (int, e
 				CLI.RegistraFecNac, ISNULL(CLI.FecNac,GetDate()) As FecNac, CLI.CodMcpio, CLI.CodDpto, CLI.TipCap, CLI.TipID, LTRIM(RTRIM(Ven_Clientes.CODLIST)) As CodList,
 				ISNULL(CLI.FechaRegistro,GetDate()) As FechaRegistro, Ven_Clientes.MARGENRETEICA, Ven_Clientes.RETANYBASE, Ven_Clientes.CodVen, Ven_Clientes.CodZona,
 				Ven_Clientes.CodBarr, Ven_Clientes.PlazoCR, Ven_Clientes.ExentoIVA, Ven_Clientes.Activo, Ven_Clientes.MotivoBloqueo, Ven_Clientes.CodNeg,
-				Ven_Clientes.Last_Modified, Ven_Clientes.Last_Sync, Ven_Clientes.Deleted_At
+				Ven_Clientes.Last_Modified, VCMS.Last_Modified As Last_Modified_Mds, Ven_Clientes.Deleted_At
 				FROM {{.DBName}}Ven_Clientes
 				LEFT JOIN {{.DBName}}Cnt_Terceros CLI ON CLI.CodTer = Ven_Clientes.Cedula
 				LEFT JOIN {{.DBName}}Ven_Clientes_Meta_Sync VCMS ON VCMS.Client_Id = Ven_Clientes.Id AND LTRIM(RTRIM(VCMS.IMEI)) = '{{.Imei}}' 
@@ -238,7 +238,7 @@ func GetCustomers(c *appContext, w http.ResponseWriter, r *http.Request) (int, e
 				&cust.RegistraFecNac, &cust.FecNac, &cust.CodMcpio, &cust.CodDpto, &cust.TipCap, &cust.TipID,
 				&cust.CodList, &cust.FechaRegistro, &cust.MargenReteICA, &cust.RetAnyBase, &cust.CodVen,
 				&cust.CodZona, &cust.CodBarr, &cust.PlazoCR, &cust.ExentoIVA, &cust.Activo, &cust.MotivoBloqueo,
-				&cust.CodNeg, &cust.Last_Modified, &cust.Last_Sync, &cust.Deleted_At)
+				&cust.CodNeg, &cust.Last_Modified, &cust.Last_Modified_Mds, &cust.Deleted_At)
 
 			if err != nil {
 				return http.StatusInternalServerError, err
