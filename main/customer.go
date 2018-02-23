@@ -111,8 +111,9 @@ func GetCustomers(c *appContext, w http.ResponseWriter, r *http.Request) (int, e
 	vars := mux.Vars(r)
 	query := r.URL.Query()
 
-	sId, sFilter, sPage_size, sOffset, sPageNo, host_database, sForSync, IMEI  := vars["id"], query.Get("filter"), query.Get("page_size"),
-		query.Get("offset"), query.Get("page_no"), r.Header.Get("host_database"), query.Get("for_sync"), query.Get("imei") // Check if Id is provided
+	sId, sFilter, sPage_size, sOffset, sPageNo, host_database, sForSync, IMEI, sPackageSize  := vars["id"], query.Get("filter"), query.Get("page_size"),
+		query.Get("offset"), query.Get("page_no"), r.Header.Get("host_database"), query.Get("for_sync"), query.Get("imei"),
+		query.Get("package_size")// Check if Id is provided
 
 	// Low Cost concatenation process
 	sDBPrefix.WriteString(host_database)
@@ -145,11 +146,15 @@ func GetCustomers(c *appContext, w http.ResponseWriter, r *http.Request) (int, e
 		for_sync = false
 	}
 
+	// Top Criteria
+	if strings.Trim(sPackageSize, " ") != "" {
+		sTop_Criteria = "TOP (" + sPackageSize + ") "
+	}
+
 	// Just records with LastModified date diferent than lastSync
 	// OR Ven_Clientes.Deleted_At IS NOT NULL
 	if for_sync {
 		sFilter_Query = "AND (Ven_Clientes.Last_Modified<>VCMS.Last_Modified OR VCMS.Last_Modified IS NULL) "
-		sTop_Criteria = "TOP (50) " // Sync data in 5 records chuncks per request
 		if strings.Trim(IMEI, " ") == "" {
 			fmt.Println("For_Sync ha sido llamado sin IMEI !")
 			return http.StatusInternalServerError, nil

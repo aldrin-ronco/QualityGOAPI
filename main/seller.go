@@ -60,8 +60,9 @@ func GetSellers(c *appContext, w http.ResponseWriter, r *http.Request) (int, err
 	vars := mux.Vars(r)
 	query := r.URL.Query()
 
-	sId, sFilter, sPage_size, sOffset, sPageNo, host_database, sForSync, IMEI  := vars["id"], query.Get("filter"), query.Get("page_size"),
-		query.Get("offset"), query.Get("page_no"), r.Header.Get("host_database"), query.Get("for_sync"), query.Get("imei") // Check if Id is provided
+	sId, sFilter, sPage_size, sOffset, sPageNo, host_database, sForSync, IMEI, sPackageSize  := vars["id"], query.Get("filter"), query.Get("page_size"),
+		query.Get("offset"), query.Get("page_no"), r.Header.Get("host_database"), query.Get("for_sync"), query.Get("imei"),
+		query.Get("package_size")// Check if Id is provided
 
 	// Low Cost concatenation process
 	sDBPrefix.WriteString(host_database)
@@ -85,6 +86,7 @@ func GetSellers(c *appContext, w http.ResponseWriter, r *http.Request) (int, err
 	offset, _ := strconv.Atoi(sOffset)
 	page_no, _ := strconv.Atoi(sPageNo)
 
+	// For Sync ?
 	if strings.Trim(sForSync, " ") != "" {
 		for_sync, err = strconv.ParseBool(sForSync)
 		if err != nil {
@@ -94,10 +96,14 @@ func GetSellers(c *appContext, w http.ResponseWriter, r *http.Request) (int, err
 		for_sync = false
 	}
 
-	// Just records with LastModified date diferent than lastSync
+	// Top Criteria
+	if strings.Trim(sPackageSize, " ") != "" {
+		sTop_Criteria = "TOP (" + sPackageSize + ") " // Sync data in 5 records chuncks per request
+	}
+
 	if for_sync {
+		// Just records with LastModified date diferent than lastSync
 		sFilter_Query = "AND (Ven_Vendedor.Last_Modified<>VMS.Last_Modified OR VMS.Last_Modified IS NULL) "
-		sTop_Criteria = "TOP (50) " // Sync data in 5 records chuncks per request
 		if strings.Trim(IMEI, " ") == "" {
 			fmt.Println("For_Sync ha sido llamado sin IMEI !")
 			return http.StatusInternalServerError, nil
